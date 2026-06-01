@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Converty Explorer</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f0; color: #1a1a1a; min-height: 100vh; }
+
+    header { background: white; border-bottom: 1px solid #e0e0d8; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; }
+    .logo { font-size: 18px; font-weight: 600; color: #1a1a1a; }
+    .logo span { color: #534AB7; }
+    #status-badge { font-size: 12px; padding: 4px 12px; border-radius: 20px; background: #f0f0ea; color: #888; }
+    #status-badge.connected { background: #e8f5e9; color: #2e7d32; }
+
+    main { max-width: 1100px; margin: 0 auto; padding: 24px; }
+
+    .connect-card { background: white; border: 1px solid #e0e0d8; border-radius: 12px; padding: 32px; text-align: center; margin-bottom: 24px; }
+    .connect-card h2 { font-size: 20px; font-weight: 500; margin-bottom: 8px; }
+    .connect-card p { color: #666; font-size: 14px; margin-bottom: 20px; }
+    .btn { display: inline-block; padding: 10px 24px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; border: none; text-decoration: none; transition: background 0.15s; }
+    .btn-primary { background: #534AB7; color: white; }
+    .btn-primary:hover { background: #3C3489; }
+    .btn-danger { background: #fff0f0; color: #c62828; border: 1px solid #f5c6c6; }
+    .btn-danger:hover { background: #ffe0e0; }
+
+    .dashboard { display: none; }
+    .dashboard.visible { display: block; }
+
+    .store-bar { background: white; border: 1px solid #e0e0d8; border-radius: 10px; padding: 14px 20px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; }
+    .store-name { font-weight: 500; font-size: 15px; }
+    .store-meta { font-size: 12px; color: #888; margin-top: 2px; }
+
+    .endpoints { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 20px; }
+    .ep-btn { background: white; border: 1px solid #e0e0d8; border-radius: 10px; padding: 12px 16px; cursor: pointer; text-align: left; transition: border-color 0.15s; font-size: 13px; }
+    .ep-btn:hover { border-color: #534AB7; }
+    .ep-btn.active { border-color: #534AB7; background: #f0eeff; color: #534AB7; font-weight: 500; }
+    .ep-btn .ep-label { font-size: 11px; color: #aaa; margin-bottom: 2px; }
+    .ep-btn.active .ep-label { color: #9b93d4; }
+
+    .params-bar { background: white; border: 1px solid #e0e0d8; border-radius: 10px; padding: 12px 16px; margin-bottom: 12px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .params-bar input { border: 1px solid #e0e0d8; border-radius: 6px; padding: 6px 10px; font-size: 13px; width: 100px; }
+    .params-bar input:focus { outline: none; border-color: #534AB7; }
+    .params-bar label { font-size: 12px; color: #666; margin-right: 4px; }
+    .url-preview { font-size: 11px; color: #aaa; font-family: monospace; margin-left: auto; word-break: break-all; max-width: 400px; text-align: right; }
+
+    .fetch-row { display: flex; gap: 10px; align-items: center; margin-bottom: 16px; }
+    #fetch-btn { background: #534AB7; color: white; border: none; border-radius: 8px; padding: 9px 22px; font-size: 14px; font-weight: 500; cursor: pointer; }
+    #fetch-btn:hover { background: #3C3489; }
+    #fetch-btn:disabled { background: #ccc; cursor: not-allowed; }
+    #fetch-status { font-size: 13px; color: #888; }
+    #fetch-status.ok { color: #2e7d32; }
+    #fetch-status.err { color: #c62828; }
+
+    .result-box { background: white; border: 1px solid #e0e0d8; border-radius: 10px; overflow: hidden; }
+    .result-header { padding: 10px 16px; border-bottom: 1px solid #f0f0ea; font-size: 12px; color: #888; display: flex; justify-content: space-between; align-items: center; }
+    #result-pre { padding: 16px; font-family: monospace; font-size: 12px; line-height: 1.6; white-space: pre-wrap; word-break: break-all; max-height: 480px; overflow-y: auto; color: #1a1a1a; }
+    #result-pre.empty { color: #bbb; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo"><span>Converty</span> Explorer</div>
+  <span id="status-badge">Not connected</span>
+</header>
+
+<main>
+
+  <!-- Connect card (shown when not connected) -->
+  <div class="connect-card" id="connect-card">
+    <h2>Connect your Converty store</h2>
+    <p>Authorize this app to access your store's products, orders, and more.</p>
+    <a href="/integrations/converty/connect" class="btn btn-primary">Connect store</a>
+  </div>
+
+  <!-- Dashboard (shown when connected) -->
+  <div class="dashboard" id="dashboard">
+
+    <div class="store-bar">
+      <div>
+        <div class="store-name" id="store-name">Loading store…</div>
+        <div class="store-meta" id="store-meta"></div>
+      </div>
+      <a href="/integrations/converty/disconnect" class="btn btn-danger">Disconnect</a>
+    </div>
+
+    <div class="endpoints">
+      <div class="ep-btn active" onclick="selectEndpoint(this, '/store', 'Store info')" data-params="none">
+        <div class="ep-label">GET</div>
+        Store info
+      </div>
+      <div class="ep-btn" onclick="selectEndpoint(this, '/products', 'Products')" data-params="paginate,search">
+        <div class="ep-label">GET</div>
+        Products
+      </div>
+      <div class="ep-btn" onclick="selectEndpoint(this, '/orders', 'Orders')" data-params="paginate">
+        <div class="ep-label">GET</div>
+        Orders
+      </div>
+      <div class="ep-btn" onclick="selectEndpoint(this, '/webhooks', 'Webhooks')" data-params="none">
+        <div class="ep-label">GET</div>
+        Webhooks
+      </div>
+    </div>
+
+    <div class="params-bar" id="params-bar">
+      <div id="param-paginate" style="display:none; gap:10px; align-items:center; display:none">
+        <label>Page</label><input type="number" id="param-page" value="1" min="1" oninput="updatePreview()"/>
+        <label>Limit</label><input type="number" id="param-limit" value="10" min="1" max="200" oninput="updatePreview()"/>
+      </div>
+      <div id="param-search" style="display:none; align-items:center; gap:6px;">
+        <label>Search</label><input type="text" id="param-search-val" placeholder="product name…" oninput="updatePreview()" style="width:160px"/>
+      </div>
+      <div class="url-preview" id="url-preview"></div>
+    </div>
+
+    <div class="fetch-row">
+      <button id="fetch-btn" onclick="fetchData()">⟳ Fetch</button>
+      <span id="fetch-status"></span>
+    </div>
+
+    <div class="result-box">
+      <div class="result-header">
+        <span id="result-label">No request yet</span>
+        <span id="result-count"></span>
+      </div>
+      <pre id="result-pre" class="empty">Select an endpoint and click Fetch.</pre>
+    </div>
+
+  </div>
+</main>
+
+<script>
+  let currentEndpoint = '/store';
+  let currentLabel    = 'Store info';
+  let currentParams   = 'none';
+
+  // ── On load: check auth status ──────────────────────────────
+  async function init() {
+    const res  = await fetch('/integrations/converty/status');
+    const data = await res.json();
+    if (data.connected) {
+      showDashboard();
+      loadStore();
+    }
+    updatePreview();
+  }
+
+  function showDashboard() {
+    document.getElementById('connect-card').style.display = 'none';
+    document.getElementById('dashboard').classList.add('visible');
+    document.getElementById('status-badge').textContent = 'Connected';
+    document.getElementById('status-badge').classList.add('connected');
+  }
+
+  async function loadStore() {
+    try {
+      const res  = await fetch('/api/converty/store');
+      const data = await res.json();
+      if (data.success && data.data) {
+        document.getElementById('store-name').textContent = data.data.name || 'My Store';
+        document.getElementById('store-meta').textContent =
+          `${data.data.currency || ''} · ${data.data.country || ''} · ${data.data.domain || ''}`;
+      }
+    } catch (e) {
+      document.getElementById('store-name').textContent = 'Store connected';
+    }
+  }
+
+  // ── Endpoint selection ──────────────────────────────────────
+  function selectEndpoint(el, path, label) {
+    document.querySelectorAll('.ep-btn').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+    currentEndpoint = path;
+    currentLabel    = label;
+    currentParams   = el.dataset.params;
+
+    const paginateEl = document.getElementById('param-paginate');
+    const searchEl   = document.getElementById('param-search');
+    paginateEl.style.display = currentParams.includes('paginate') ? 'flex' : 'none';
+    searchEl.style.display   = currentParams.includes('search')   ? 'flex' : 'none';
+
+    updatePreview();
+  }
+
+  // ── URL preview ─────────────────────────────────────────────
+  function updatePreview() {
+    const url = buildUrl();
+    document.getElementById('url-preview').textContent = 'GET ' + url;
+  }
+
+  function buildUrl() {
+    let url = '/api/converty' + currentEndpoint;
+    const params = new URLSearchParams();
+    if (currentParams.includes('paginate')) {
+      params.set('page',  document.getElementById('param-page')?.value  || 1);
+      params.set('limit', document.getElementById('param-limit')?.value || 10);
+    }
+    if (currentParams.includes('search')) {
+      const s = document.getElementById('param-search-val')?.value;
+      if (s) params.set('search', s);
+    }
+    const qs = params.toString();
+    return qs ? `${url}?${qs}` : url;
+  }
+
+  // ── Fetch ───────────────────────────────────────────────────
+  async function fetchData() {
+    const btn    = document.getElementById('fetch-btn');
+    const status = document.getElementById('fetch-status');
+    const pre    = document.getElementById('result-pre');
+    const label  = document.getElementById('result-label');
+    const count  = document.getElementById('result-count');
+
+    btn.disabled     = true;
+    btn.textContent  = 'Fetching…';
+    status.textContent = '';
+    status.className   = '';
+    pre.textContent  = 'Loading…';
+    pre.className    = 'empty';
+    label.textContent = `GET /api/converty${currentEndpoint}`;
+    count.textContent = '';
+
+    try {
+      const res  = await fetch(buildUrl());
+      const data = await res.json();
+
+      pre.textContent = JSON.stringify(data, null, 2);
+      pre.className   = '';
+
+      if (res.ok && data.success !== false) {
+        status.textContent = `✓ ${res.status} OK`;
+        status.className   = 'ok';
+        if (data.count != null) count.textContent = `${data.count} total`;
+      } else {
+        status.textContent = `✗ ${res.status} Error`;
+        status.className   = 'err';
+      }
+    } catch (e) {
+      pre.textContent  = e.message;
+      pre.className    = '';
+      status.textContent = '✗ Request failed';
+      status.className   = 'err';
+    }
+
+    btn.disabled    = false;
+    btn.textContent = '⟳ Fetch';
+  }
+
+  init();
+</script>
+</body>
+</html>
