@@ -8,14 +8,24 @@ const apiRoutes  = require('./routes/api');
 
 const app = express();
 
+// Railway (and most PaaS) sit behind a reverse proxy — required for
+// secure cookies and correct IP detection to work.
+app.set('trust proxy', 1);
+
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
+const isProd = process.env.NODE_ENV === 'production';
 app.use(session({
   secret: process.env.SESSION_SECRET || 'dev-secret',
   resave: false,
   saveUninitialized: false,
-  cookie: { secure: false } // set to true in production with HTTPS
+  cookie: {
+    secure:   isProd,          // HTTPS-only in production (Railway), plain HTTP locally
+    sameSite: 'lax',           // lets the cookie survive the OAuth redirect back
+    httpOnly: true,
+    maxAge:   24 * 60 * 60 * 1000, // 24 hours
+  },
 }));
 
 // ── Routes ──────────────────────────────────

@@ -20,7 +20,16 @@ router.get('/connect', (req, res) => {
   });
 
   const authUrl = `${BASE_URL}/oauth2/authorize?${params.toString()}`;
-  res.redirect(authUrl);
+
+  // Must save the session (and its oauthState) BEFORE redirecting to Converty,
+  // otherwise the session write races with the redirect and the CSRF check fails.
+  req.session.save((err) => {
+    if (err) {
+      console.error('❌ Session save failed on /connect:', err);
+      return res.status(500).send('Session error — please try again.');
+    }
+    res.redirect(authUrl);
+  });
 });
 
 // ── Step 2: Converty redirects back here with a code ──────────
@@ -30,12 +39,13 @@ router.get('/oauth/callback', async (req, res) => {
 
   // CSRF check
   if (!state || state !== req.session.oauthState) {
-    return res.status(400).json({ error: 'Invalid state parameter — possible CSRF attack' });
+    console.error('❌ CSRF state mismatch. Got:', state, '| Expected:', req.session.oauthState);
+    return res.status(400).send(popupErrorPage('Authorization failed: state mismatch. Please close this window and try connecting again.'));
   }
   delete req.session.oauthState;
 
   if (!code) {
-    return res.status(400).json({ error: 'No authorization code received' });
+    return res.status(400).send(popupErrorPage('No authorization code received from Converty.'));
   }
 
   try {
@@ -85,7 +95,7 @@ router.get('/oauth/callback', async (req, res) => {
     });
   } catch (err) {
     console.error('❌ Token exchange failed:', err.response?.data || err.message);
-    res.status(500).json({ error: 'Token exchange failed', details: err.response?.data });
+    res.status(500).send(popupErrorPage('Token exchange failed: ' + (err.response?.data?.message || err.message)));
   }
 });
 
@@ -138,6 +148,20 @@ router.get('/status', (req, res) => {
     expires_at: req.session.converty?.expires_at || null,
   });
 });
+
+// ── Popup error page helper ────────────────────────────────────
+function popupErrorPage(message) {
+  return `<!DOCTYPE html><html><head><title>Connection error</title>
+<style>body{font-family:sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#fff0f0;}
+.box{text-align:center;padding:32px;max-width:360px;}
+h2{color:#c62828;margin-bottom:12px;}p{color:#555;font-size:14px;line-height:1.6;}
+button{margin-top:20px;padding:10px 24px;background:#534AB7;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;}
+</style></head><body><div class="box">
+<h2>Connection failed</h2>
+<p>${message}</p>
+<button onclick="window.close()">Close</button>
+</div></body></html>`;
+}
 
 module.exports = router;
 module.exports.getValidToken = getValidToken;
