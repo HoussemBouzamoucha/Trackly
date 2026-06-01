@@ -11,15 +11,17 @@ router.get('/connect', (req, res) => {
   const state = crypto.randomBytes(16).toString('hex');
   req.session.oauthState = state;
 
+  // Build the authorize URL manually so scope spaces are encoded as %20,
+  // not + (URLSearchParams default). Converty's server treats + literally.
+  const SCOPES = 'read-stores read-products read-orders read-hooks create-hooks delete-hooks';
   const params = new URLSearchParams({
     response_type: 'code',
     client_id:     process.env.CONVERTY_CLIENT_ID,
     redirect_uri:  process.env.CONVERTY_REDIRECT_URI,
-    scope:         'read-stores read-products read-orders create-orders update-orders read-hooks create-hooks delete-hooks',
     state,
   });
 
-  const authUrl = `${BASE_URL}/oauth2/authorize?${params.toString()}`;
+  const authUrl = `${BASE_URL}/oauth2/authorize?${params.toString()}&scope=${encodeURIComponent(SCOPES)}`;
 
   // Must save the session (and its oauthState) BEFORE redirecting to Converty,
   // otherwise the session write races with the redirect and the CSRF check fails.
@@ -35,7 +37,16 @@ router.get('/connect', (req, res) => {
 // ── Step 2: Converty redirects back here with a code ──────────
 // GET /integrations/converty/oauth/callback
 router.get('/oauth/callback', async (req, res) => {
-  const { code, state } = req.query;
+  console.log('📥 Callback hit — query params:', JSON.stringify(req.query));
+  console.log('📦 Session state:', req.session.oauthState, '| Session ID:', req.session.id);
+
+  const { code, state, error, error_description } = req.query;
+
+  // Converty sent back an error
+  if (error) {
+    console.error('❌ Converty returned error:', error, error_description);
+    return res.status(400).send(popupErrorPage(`Converty denied the request: ${error} — ${error_description || ''}`));
+  }
 
   // CSRF check
   if (!state || state !== req.session.oauthState) {
@@ -120,14 +131,14 @@ async function getValidToken(req) {
 // ── Debug (remove after confirming OAuth works) ────────────────
 // GET /integrations/converty/debug
 router.get('/debug', (req, res) => {
+  const SCOPES = 'read-stores read-products read-orders read-hooks create-hooks delete-hooks';
   const params = new URLSearchParams({
     response_type: 'code',
     client_id:     process.env.CONVERTY_CLIENT_ID,
     redirect_uri:  process.env.CONVERTY_REDIRECT_URI,
-    scope:         'read-stores read-products read-orders create-orders update-orders read-hooks create-hooks delete-hooks',
     state:         'DEBUG_STATE',
   });
-  const authUrl = `${BASE_URL}/oauth2/authorize?${params.toString()}`;
+  const authUrl = `${BASE_URL}/oauth2/authorize?${params.toString()}&scope=${encodeURIComponent(SCOPES)}`;
   res.json({
     session_id:       req.session.id,
     session_has_data: !!req.session.converty,
