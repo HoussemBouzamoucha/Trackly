@@ -13,7 +13,7 @@ router.get('/connect', (req, res) => {
 
   // Build the authorize URL manually so scope spaces are encoded as %20,
   // not + (URLSearchParams default). Converty's server treats + literally.
-  const SCOPES = 'read-stores read-products read-orders read-hooks create-hooks delete-hooks';
+  const SCOPES = 'read-stores read-products read-orders';
   const params = new URLSearchParams({
     response_type: 'code',
     client_id:     process.env.CONVERTY_CLIENT_ID,
@@ -131,7 +131,7 @@ async function getValidToken(req) {
 // ── Debug (remove after confirming OAuth works) ────────────────
 // GET /integrations/converty/debug
 router.get('/debug', (req, res) => {
-  const SCOPES = 'read-stores read-products read-orders read-hooks create-hooks delete-hooks';
+  const SCOPES = 'read-stores read-products read-orders';
   const params = new URLSearchParams({
     response_type: 'code',
     client_id:     process.env.CONVERTY_CLIENT_ID,
