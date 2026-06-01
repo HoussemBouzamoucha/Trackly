@@ -121,6 +121,34 @@ router.get('/token-info', requireAuth, async (req, res) => {
   });
 });
 
+// ── Debug: raw probe of Converty API endpoints ─────────────────
+router.get('/probe', requireAuth, async (req, res) => {
+  const token = req.session.converty.access_token;
+  const endpoints = [
+    '/stores/me',
+    '/store/me',
+    '/stores',
+    '/store',
+    '/products',
+    '/orders',
+  ];
+
+  const results = {};
+  for (const ep of endpoints) {
+    const url = `${BASE_URL}${ep}`;
+    try {
+      const r = await axios.get(url, {
+        headers: { Authorization: `Bearer ${token}` },
+        validateStatus: () => true, // don't throw on any status
+      });
+      results[ep] = { status: r.status, body: r.data };
+    } catch (e) {
+      results[ep] = { error: e.message };
+    }
+  }
+  res.json(results);
+});
+
 // ─────────────────────────────────────────────────────────────
 // Error handler
 // ─────────────────────────────────────────────────────────────
