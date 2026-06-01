@@ -3,7 +3,7 @@ const router  = express.Router();
 const axios   = require('axios');
 const crypto  = require('crypto');
 
-const BASE_URL = 'https://converty.shop/en';
+const BASE_URL = 'https://partner.converty.shop/en';
 
 // ── Step 1: Redirect seller to Converty login ──────────────────
 // GET /integrations/converty/connect
