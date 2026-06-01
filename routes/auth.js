@@ -73,25 +73,10 @@ router.get('/oauth/callback', async (req, res) => {
     req.session.save((saveErr) => {
       if (saveErr) {
         console.error('❌ Session save failed:', saveErr);
-        return res.status(500).json({ error: 'Session save failed' });
+        return res.status(500).send(popupErrorPage('Session save failed — please try again.'));
       }
       console.log('✅ Converty OAuth success — tokens stored in session');
-
-      // If opened as a popup, notify the parent window and close.
-      // If opened as a normal tab (fallback), just redirect to /.
-      res.send(`<!DOCTYPE html><html><head><title>Connecting…</title></head><body>
-<script>
-  if (window.opener && !window.opener.closed) {
-    window.opener.postMessage('converty-connected', window.location.origin);
-    window.close();
-  } else {
-    window.location.href = '/';
-  }
-</script>
-<p style="font-family:sans-serif;text-align:center;margin-top:60px;color:#534AB7">
-  Connected! Closing…
-</p>
-</body></html>`);
+      res.redirect('/');
     });
   } catch (err) {
     console.error('❌ Token exchange failed:', err.response?.data || err.message);
@@ -131,6 +116,28 @@ async function getValidToken(req) {
   console.log('🔄 Token refreshed successfully');
   return access_token;
 }
+
+// ── Debug (remove after confirming OAuth works) ────────────────
+// GET /integrations/converty/debug
+router.get('/debug', (req, res) => {
+  const params = new URLSearchParams({
+    response_type: 'code',
+    client_id:     process.env.CONVERTY_CLIENT_ID,
+    redirect_uri:  process.env.CONVERTY_REDIRECT_URI,
+    scope:         'read-stores read-products read-orders create-orders update-orders read-hooks create-hooks delete-hooks',
+    state:         'DEBUG_STATE',
+  });
+  const authUrl = `${BASE_URL}/oauth2/authorize?${params.toString()}`;
+  res.json({
+    session_id:       req.session.id,
+    session_has_data: !!req.session.converty,
+    oauth_state:      req.session.oauthState || null,
+    oauth_url:        authUrl,
+    redirect_uri:     process.env.CONVERTY_REDIRECT_URI,
+    client_id:        process.env.CONVERTY_CLIENT_ID,
+    node_env:         process.env.NODE_ENV,
+  });
+});
 
 // ── Disconnect ─────────────────────────────────────────────────
 // GET /integrations/converty/disconnect
