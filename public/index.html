@@ -222,7 +222,7 @@
     <div class="icon">🏪</div>
     <h2>Connect your store</h2>
     <p>Authorize Trackly to access your Converty store's products, orders, and more.</p>
-    <a href="/integrations/converty/connect" class="btn-connect">Connect with Converty</a>
+    <button onclick="openConnectPopup()" class="btn-connect" id="btn-connect">Connect with Converty</button>
   </div>
 
   <!-- ── Dashboard ── -->
@@ -354,6 +354,50 @@
 </main>
 
 <script>
+// ── Popup OAuth ─────────────────────────────────────────────────
+function openConnectPopup() {
+  const w = 520, h = 680;
+  const left = Math.max(0, (screen.width  - w) / 2);
+  const top  = Math.max(0, (screen.height - h) / 2);
+  const popup = window.open(
+    '/integrations/converty/connect',
+    'converty-auth',
+    `width=${w},height=${h},left=${left},top=${top},resizable=yes,scrollbars=yes`
+  );
+
+  if (!popup || popup.closed) {
+    // Pop-up blocked — fall back to same-tab navigation
+    window.location.href = '/integrations/converty/connect';
+    return;
+  }
+
+  const btn = document.getElementById('btn-connect');
+  btn.textContent = 'Waiting for login…';
+  btn.disabled = true;
+
+  // Listen for the success message from the popup
+  function onMessage(e) {
+    if (e.origin !== window.location.origin) return;
+    if (e.data === 'converty-connected') {
+      window.removeEventListener('message', onMessage);
+      clearInterval(pollTimer);
+      init();
+    }
+  }
+  window.addEventListener('message', onMessage);
+
+  // Fallback: if the user simply closes the popup, re-check status
+  const pollTimer = setInterval(() => {
+    if (popup.closed) {
+      clearInterval(pollTimer);
+      window.removeEventListener('message', onMessage);
+      btn.textContent = 'Connect with Converty';
+      btn.disabled = false;
+      init(); // re-check in case they completed it
+    }
+  }, 600);
+}
+
 // ── Init ────────────────────────────────────────────────────────
 async function init() {
   try {
@@ -361,7 +405,11 @@ async function init() {
     const data = await res.json();
     if (data.connected) {
       showDashboard();
-      fetchSection('store'); // auto-load store info on connect
+      fetchSection('store');
+    } else {
+      // Reset connect button in case it was in waiting state
+      const btn = document.getElementById('btn-connect');
+      if (btn) { btn.textContent = 'Connect with Converty'; btn.disabled = false; }
     }
   } catch (e) {
     console.error('Status check failed', e);

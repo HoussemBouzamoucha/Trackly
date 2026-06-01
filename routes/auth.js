@@ -60,15 +60,28 @@ router.get('/oauth/callback', async (req, res) => {
       expires_at: Date.now() + expires_in * 1000,
     };
 
-    // Explicitly save the session before redirecting to avoid a race condition
-    // where the redirect fires before the session write completes.
     req.session.save((saveErr) => {
       if (saveErr) {
         console.error('❌ Session save failed:', saveErr);
         return res.status(500).json({ error: 'Session save failed' });
       }
       console.log('✅ Converty OAuth success — tokens stored in session');
-      res.redirect('/');
+
+      // If opened as a popup, notify the parent window and close.
+      // If opened as a normal tab (fallback), just redirect to /.
+      res.send(`<!DOCTYPE html><html><head><title>Connecting…</title></head><body>
+<script>
+  if (window.opener && !window.opener.closed) {
+    window.opener.postMessage('converty-connected', window.location.origin);
+    window.close();
+  } else {
+    window.location.href = '/';
+  }
+</script>
+<p style="font-family:sans-serif;text-align:center;margin-top:60px;color:#534AB7">
+  Connected! Closing…
+</p>
+</body></html>`);
     });
   } catch (err) {
     console.error('❌ Token exchange failed:', err.response?.data || err.message);
