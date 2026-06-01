@@ -3,253 +3,627 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Converty Explorer</title>
+  <title>Trackly — Store Dashboard</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f0; color: #1a1a1a; min-height: 100vh; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+           background: #f4f4f0; color: #1a1a1a; min-height: 100vh; }
 
-    header { background: white; border-bottom: 1px solid #e0e0d8; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; }
-    .logo { font-size: 18px; font-weight: 600; color: #1a1a1a; }
+    /* ── Header ── */
+    header {
+      background: #fff;
+      border-bottom: 1px solid #e2e2da;
+      padding: 14px 28px;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 10;
+    }
+    .logo { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
     .logo span { color: #534AB7; }
-    #status-badge { font-size: 12px; padding: 4px 12px; border-radius: 20px; background: #f0f0ea; color: #888; }
-    #status-badge.connected { background: #e8f5e9; color: #2e7d32; }
+    .badge {
+      font-size: 12px; padding: 4px 12px; border-radius: 20px;
+      background: #f0f0ea; color: #888; font-weight: 500;
+    }
+    .badge.connected { background: #e8f5e9; color: #2e7d32; }
 
-    main { max-width: 1100px; margin: 0 auto; padding: 24px; }
+    /* ── Layout ── */
+    main { max-width: 1000px; margin: 0 auto; padding: 28px 20px; }
 
-    .connect-card { background: white; border: 1px solid #e0e0d8; border-radius: 12px; padding: 32px; text-align: center; margin-bottom: 24px; }
-    .connect-card h2 { font-size: 20px; font-weight: 500; margin-bottom: 8px; }
-    .connect-card p { color: #666; font-size: 14px; margin-bottom: 20px; }
-    .btn { display: inline-block; padding: 10px 24px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; border: none; text-decoration: none; transition: background 0.15s; }
-    .btn-primary { background: #534AB7; color: white; }
-    .btn-primary:hover { background: #3C3489; }
-    .btn-danger { background: #fff0f0; color: #c62828; border: 1px solid #f5c6c6; }
-    .btn-danger:hover { background: #ffe0e0; }
+    /* ── Connect screen ── */
+    #connect-screen {
+      background: #fff;
+      border: 1px solid #e2e2da;
+      border-radius: 16px;
+      padding: 56px 32px;
+      text-align: center;
+      max-width: 460px;
+      margin: 60px auto;
+    }
+    #connect-screen .icon {
+      width: 56px; height: 56px; border-radius: 14px;
+      background: #f0eeff; display: flex; align-items: center;
+      justify-content: center; margin: 0 auto 20px; font-size: 26px;
+    }
+    #connect-screen h2 { font-size: 22px; font-weight: 600; margin-bottom: 8px; }
+    #connect-screen p { color: #666; font-size: 14px; margin-bottom: 28px; line-height: 1.6; }
+    .btn-connect {
+      display: inline-block; background: #534AB7; color: #fff;
+      padding: 11px 28px; border-radius: 8px; font-size: 14px;
+      font-weight: 600; text-decoration: none; transition: background 0.15s;
+    }
+    .btn-connect:hover { background: #3C3489; }
 
-    .dashboard { display: none; }
-    .dashboard.visible { display: block; }
+    /* ── Dashboard ── */
+    #dashboard { display: none; }
+    #dashboard.visible { display: block; }
 
-    .store-bar { background: white; border: 1px solid #e0e0d8; border-radius: 10px; padding: 14px 20px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; }
-    .store-name { font-weight: 500; font-size: 15px; }
-    .store-meta { font-size: 12px; color: #888; margin-top: 2px; }
+    /* Store header card */
+    .store-card {
+      background: #fff;
+      border: 1px solid #e2e2da;
+      border-radius: 14px;
+      padding: 20px 24px;
+      margin-bottom: 24px;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 16px;
+    }
+    .store-avatar {
+      width: 44px; height: 44px; border-radius: 10px;
+      background: #f0eeff; display: flex; align-items: center;
+      justify-content: center; font-size: 22px; flex-shrink: 0;
+    }
+    .store-info { flex: 1; }
+    .store-name { font-size: 17px; font-weight: 600; }
+    .store-meta { font-size: 13px; color: #888; margin-top: 3px; }
+    .btn-disconnect {
+      background: #fff0f0; color: #c62828;
+      border: 1px solid #f5c6c6; border-radius: 8px;
+      padding: 8px 18px; font-size: 13px; font-weight: 500;
+      text-decoration: none; white-space: nowrap;
+      transition: background 0.15s;
+    }
+    .btn-disconnect:hover { background: #ffe0e0; }
 
-    .endpoints { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 20px; }
-    .ep-btn { background: white; border: 1px solid #e0e0d8; border-radius: 10px; padding: 12px 16px; cursor: pointer; text-align: left; transition: border-color 0.15s; font-size: 13px; }
-    .ep-btn:hover { border-color: #534AB7; }
-    .ep-btn.active { border-color: #534AB7; background: #f0eeff; color: #534AB7; font-weight: 500; }
-    .ep-btn .ep-label { font-size: 11px; color: #aaa; margin-bottom: 2px; }
-    .ep-btn.active .ep-label { color: #9b93d4; }
+    /* ── Section cards ── */
+    .section {
+      background: #fff;
+      border: 1px solid #e2e2da;
+      border-radius: 14px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .section-header {
+      padding: 16px 22px;
+      display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid #f0f0ea; gap: 12px; flex-wrap: wrap;
+    }
+    .section-title {
+      display: flex; align-items: center; gap: 10px;
+    }
+    .section-icon {
+      width: 32px; height: 32px; border-radius: 8px;
+      background: #f0eeff; color: #534AB7;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px; flex-shrink: 0;
+    }
+    .section-title h3 { font-size: 15px; font-weight: 600; }
+    .section-title .endpoint-tag {
+      font-size: 11px; color: #888; font-family: monospace;
+      background: #f4f4f0; padding: 2px 7px; border-radius: 4px;
+    }
 
-    .params-bar { background: white; border: 1px solid #e0e0d8; border-radius: 10px; padding: 12px 16px; margin-bottom: 12px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-    .params-bar input { border: 1px solid #e0e0d8; border-radius: 6px; padding: 6px 10px; font-size: 13px; width: 100px; }
-    .params-bar input:focus { outline: none; border-color: #534AB7; }
-    .params-bar label { font-size: 12px; color: #666; margin-right: 4px; }
-    .url-preview { font-size: 11px; color: #aaa; font-family: monospace; margin-left: auto; word-break: break-all; max-width: 400px; text-align: right; }
+    /* Controls row */
+    .section-controls {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    }
+    .param-group { display: flex; align-items: center; gap: 6px; }
+    .param-group label { font-size: 12px; color: #666; }
+    .param-group input {
+      border: 1px solid #e2e2da; border-radius: 6px;
+      padding: 5px 9px; font-size: 13px;
+      width: 80px; transition: border-color 0.15s;
+    }
+    .param-group input[type="text"] { width: 140px; }
+    .param-group input:focus { outline: none; border-color: #534AB7; }
+    .btn-fetch {
+      background: #534AB7; color: #fff; border: none;
+      border-radius: 7px; padding: 7px 18px; font-size: 13px;
+      font-weight: 600; cursor: pointer; transition: background 0.15s;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .btn-fetch:hover { background: #3C3489; }
+    .btn-fetch:disabled { background: #bbb; cursor: not-allowed; }
+    .fetch-status { font-size: 12px; }
+    .fetch-status.ok { color: #2e7d32; }
+    .fetch-status.err { color: #c62828; }
 
-    .fetch-row { display: flex; gap: 10px; align-items: center; margin-bottom: 16px; }
-    #fetch-btn { background: #534AB7; color: white; border: none; border-radius: 8px; padding: 9px 22px; font-size: 14px; font-weight: 500; cursor: pointer; }
-    #fetch-btn:hover { background: #3C3489; }
-    #fetch-btn:disabled { background: #ccc; cursor: not-allowed; }
-    #fetch-status { font-size: 13px; color: #888; }
-    #fetch-status.ok { color: #2e7d32; }
-    #fetch-status.err { color: #c62828; }
+    /* ── Result area ── */
+    .section-body { padding: 0; }
 
-    .result-box { background: white; border: 1px solid #e0e0d8; border-radius: 10px; overflow: hidden; }
-    .result-header { padding: 10px 16px; border-bottom: 1px solid #f0f0ea; font-size: 12px; color: #888; display: flex; justify-content: space-between; align-items: center; }
-    #result-pre { padding: 16px; font-family: monospace; font-size: 12px; line-height: 1.6; white-space: pre-wrap; word-break: break-all; max-height: 480px; overflow-y: auto; color: #1a1a1a; }
-    #result-pre.empty { color: #bbb; }
+    /* Table view */
+    .data-table-wrap { overflow-x: auto; }
+    table {
+      width: 100%; border-collapse: collapse;
+      font-size: 13px;
+    }
+    th {
+      background: #fafaf7; padding: 10px 16px;
+      text-align: left; font-size: 11px; font-weight: 600;
+      color: #888; text-transform: uppercase; letter-spacing: 0.5px;
+      border-bottom: 1px solid #f0f0ea;
+    }
+    td {
+      padding: 10px 16px; border-bottom: 1px solid #f7f7f4;
+      vertical-align: top;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #fafaf7; }
+    .cell-id { font-family: monospace; font-size: 11px; color: #aaa; }
+    .cell-badge {
+      display: inline-block; padding: 2px 8px; border-radius: 10px;
+      font-size: 11px; font-weight: 500;
+    }
+    .badge-green  { background: #e8f5e9; color: #2e7d32; }
+    .badge-orange { background: #fff3e0; color: #e65100; }
+    .badge-blue   { background: #e3f2fd; color: #1565c0; }
+    .badge-grey   { background: #f0f0ea; color: #666; }
+
+    /* Key-value card (store info) */
+    .kv-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1px; background: #f0f0ea;
+    }
+    .kv-item {
+      background: #fff; padding: 16px 20px;
+    }
+    .kv-key { font-size: 11px; color: #888; text-transform: uppercase;
+              letter-spacing: 0.5px; margin-bottom: 4px; }
+    .kv-val { font-size: 14px; font-weight: 500; word-break: break-all; }
+
+    /* Empty / loading states */
+    .state-msg {
+      padding: 32px; text-align: center; color: #bbb; font-size: 13px;
+    }
+
+    /* Pagination row */
+    .pagination-row {
+      padding: 12px 20px; border-top: 1px solid #f0f0ea;
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 12px; color: #888;
+    }
+
+    /* Raw JSON toggle */
+    .json-toggle {
+      font-size: 11px; color: #888; background: none; border: none;
+      cursor: pointer; padding: 2px 6px; border-radius: 4px;
+      transition: background 0.1s;
+    }
+    .json-toggle:hover { background: #f0f0ea; color: #444; }
+    pre.raw-json {
+      padding: 16px 20px; font-size: 11px; font-family: monospace;
+      line-height: 1.7; white-space: pre-wrap; word-break: break-all;
+      max-height: 360px; overflow-y: auto;
+      border-top: 1px solid #f0f0ea; display: none;
+    }
+    pre.raw-json.visible { display: block; }
   </style>
 </head>
 <body>
 
 <header>
-  <div class="logo"><span>Converty</span> Explorer</div>
-  <span id="status-badge">Not connected</span>
+  <div class="logo"><span>Track</span>ly</div>
+  <span id="status-badge" class="badge">Not connected</span>
 </header>
 
 <main>
 
-  <!-- Connect card (shown when not connected) -->
-  <div class="connect-card" id="connect-card">
-    <h2>Connect your Converty store</h2>
-    <p>Authorize this app to access your store's products, orders, and more.</p>
-    <a href="/integrations/converty/connect" class="btn btn-primary">Connect store</a>
+  <!-- ── Connect screen ── -->
+  <div id="connect-screen">
+    <div class="icon">🏪</div>
+    <h2>Connect your store</h2>
+    <p>Authorize Trackly to access your Converty store's products, orders, and more.</p>
+    <a href="/integrations/converty/connect" class="btn-connect">Connect with Converty</a>
   </div>
 
-  <!-- Dashboard (shown when connected) -->
-  <div class="dashboard" id="dashboard">
+  <!-- ── Dashboard ── -->
+  <div id="dashboard">
 
-    <div class="store-bar">
-      <div>
-        <div class="store-name" id="store-name">Loading store…</div>
+    <!-- Store identity bar -->
+    <div class="store-card">
+      <div class="store-avatar">🏪</div>
+      <div class="store-info">
+        <div class="store-name" id="store-name">Loading…</div>
         <div class="store-meta" id="store-meta"></div>
       </div>
-      <a href="/integrations/converty/disconnect" class="btn btn-danger">Disconnect</a>
+      <a href="/integrations/converty/disconnect" class="btn-disconnect">Disconnect</a>
     </div>
 
-    <div class="endpoints">
-      <div class="ep-btn active" onclick="selectEndpoint(this, '/store', 'Store info')" data-params="none">
-        <div class="ep-label">GET</div>
-        Store info
+    <!-- ── Store info section ── -->
+    <div class="section" id="sec-store">
+      <div class="section-header">
+        <div class="section-title">
+          <div class="section-icon">🏷️</div>
+          <div>
+            <h3>Store info</h3>
+            <span class="endpoint-tag">GET /stores/me</span>
+          </div>
+        </div>
+        <div class="section-controls">
+          <span class="fetch-status" id="fs-store"></span>
+          <button class="btn-fetch" id="btn-store" onclick="fetchSection('store')">
+            <span>⟳</span> Fetch
+          </button>
+        </div>
       </div>
-      <div class="ep-btn" onclick="selectEndpoint(this, '/products', 'Products')" data-params="paginate,search">
-        <div class="ep-label">GET</div>
-        Products
+      <div class="section-body" id="body-store">
+        <div class="state-msg">Click Fetch to load store details.</div>
       </div>
-      <div class="ep-btn" onclick="selectEndpoint(this, '/orders', 'Orders')" data-params="paginate">
-        <div class="ep-label">GET</div>
-        Orders
-      </div>
-      <div class="ep-btn" onclick="selectEndpoint(this, '/webhooks', 'Webhooks')" data-params="none">
-        <div class="ep-label">GET</div>
-        Webhooks
-      </div>
+      <pre class="raw-json" id="raw-store"></pre>
     </div>
 
-    <div class="params-bar" id="params-bar">
-      <div id="param-paginate" style="display:none; gap:10px; align-items:center; display:none">
-        <label>Page</label><input type="number" id="param-page" value="1" min="1" oninput="updatePreview()"/>
-        <label>Limit</label><input type="number" id="param-limit" value="10" min="1" max="200" oninput="updatePreview()"/>
+    <!-- ── Products section ── -->
+    <div class="section" id="sec-products">
+      <div class="section-header">
+        <div class="section-title">
+          <div class="section-icon">📦</div>
+          <div>
+            <h3>Products</h3>
+            <span class="endpoint-tag">GET /products</span>
+          </div>
+        </div>
+        <div class="section-controls">
+          <div class="param-group">
+            <label>Search</label>
+            <input type="text" id="p-search" placeholder="name…" />
+          </div>
+          <div class="param-group">
+            <label>Page</label>
+            <input type="number" id="p-page" value="1" min="1" />
+          </div>
+          <div class="param-group">
+            <label>Limit</label>
+            <input type="number" id="p-limit" value="10" min="1" max="200" />
+          </div>
+          <span class="fetch-status" id="fs-products"></span>
+          <button class="btn-fetch" id="btn-products" onclick="fetchSection('products')">
+            <span>⟳</span> Fetch
+          </button>
+        </div>
       </div>
-      <div id="param-search" style="display:none; align-items:center; gap:6px;">
-        <label>Search</label><input type="text" id="param-search-val" placeholder="product name…" oninput="updatePreview()" style="width:160px"/>
+      <div class="section-body" id="body-products">
+        <div class="state-msg">Click Fetch to load products.</div>
       </div>
-      <div class="url-preview" id="url-preview"></div>
+      <pre class="raw-json" id="raw-products"></pre>
     </div>
 
-    <div class="fetch-row">
-      <button id="fetch-btn" onclick="fetchData()">⟳ Fetch</button>
-      <span id="fetch-status"></span>
-    </div>
-
-    <div class="result-box">
-      <div class="result-header">
-        <span id="result-label">No request yet</span>
-        <span id="result-count"></span>
+    <!-- ── Orders section ── -->
+    <div class="section" id="sec-orders">
+      <div class="section-header">
+        <div class="section-title">
+          <div class="section-icon">🛒</div>
+          <div>
+            <h3>Orders</h3>
+            <span class="endpoint-tag">GET /orders</span>
+          </div>
+        </div>
+        <div class="section-controls">
+          <div class="param-group">
+            <label>Page</label>
+            <input type="number" id="o-page" value="1" min="1" />
+          </div>
+          <div class="param-group">
+            <label>Limit</label>
+            <input type="number" id="o-limit" value="10" min="1" max="200" />
+          </div>
+          <span class="fetch-status" id="fs-orders"></span>
+          <button class="btn-fetch" id="btn-orders" onclick="fetchSection('orders')">
+            <span>⟳</span> Fetch
+          </button>
+        </div>
       </div>
-      <pre id="result-pre" class="empty">Select an endpoint and click Fetch.</pre>
+      <div class="section-body" id="body-orders">
+        <div class="state-msg">Click Fetch to load orders.</div>
+      </div>
+      <pre class="raw-json" id="raw-orders"></pre>
     </div>
 
-  </div>
+    <!-- ── Webhooks section ── -->
+    <div class="section" id="sec-webhooks">
+      <div class="section-header">
+        <div class="section-title">
+          <div class="section-icon">🔔</div>
+          <div>
+            <h3>Webhooks</h3>
+            <span class="endpoint-tag">GET /hooks</span>
+          </div>
+        </div>
+        <div class="section-controls">
+          <span class="fetch-status" id="fs-webhooks"></span>
+          <button class="btn-fetch" id="btn-webhooks" onclick="fetchSection('webhooks')">
+            <span>⟳</span> Fetch
+          </button>
+        </div>
+      </div>
+      <div class="section-body" id="body-webhooks">
+        <div class="state-msg">Click Fetch to load webhooks.</div>
+      </div>
+      <pre class="raw-json" id="raw-webhooks"></pre>
+    </div>
+
+  </div><!-- /dashboard -->
 </main>
 
 <script>
-  let currentEndpoint = '/store';
-  let currentLabel    = 'Store info';
-  let currentParams   = 'none';
-
-  // ── On load: check auth status ──────────────────────────────
-  async function init() {
+// ── Init ────────────────────────────────────────────────────────
+async function init() {
+  try {
     const res  = await fetch('/integrations/converty/status');
     const data = await res.json();
     if (data.connected) {
       showDashboard();
-      loadStore();
+      fetchSection('store'); // auto-load store info on connect
     }
-    updatePreview();
+  } catch (e) {
+    console.error('Status check failed', e);
   }
+}
 
-  function showDashboard() {
-    document.getElementById('connect-card').style.display = 'none';
-    document.getElementById('dashboard').classList.add('visible');
-    document.getElementById('status-badge').textContent = 'Connected';
-    document.getElementById('status-badge').classList.add('connected');
-  }
+function showDashboard() {
+  document.getElementById('connect-screen').style.display = 'none';
+  const dash = document.getElementById('dashboard');
+  dash.style.display = 'block';
+  const badge = document.getElementById('status-badge');
+  badge.textContent = 'Connected';
+  badge.classList.add('connected');
+}
 
-  async function loadStore() {
-    try {
-      const res  = await fetch('/api/converty/store');
-      const data = await res.json();
-      if (data.success && data.data) {
-        document.getElementById('store-name').textContent = data.data.name || 'My Store';
-        document.getElementById('store-meta').textContent =
-          `${data.data.currency || ''} · ${data.data.country || ''} · ${data.data.domain || ''}`;
-      }
-    } catch (e) {
-      document.getElementById('store-name').textContent = 'Store connected';
-    }
-  }
+// ── Generic fetch for any section ───────────────────────────────
+async function fetchSection(section) {
+  const btn    = document.getElementById('btn-' + section);
+  const status = document.getElementById('fs-' + section);
+  const body   = document.getElementById('body-' + section);
+  const raw    = document.getElementById('raw-' + section);
 
-  // ── Endpoint selection ──────────────────────────────────────
-  function selectEndpoint(el, path, label) {
-    document.querySelectorAll('.ep-btn').forEach(b => b.classList.remove('active'));
-    el.classList.add('active');
-    currentEndpoint = path;
-    currentLabel    = label;
-    currentParams   = el.dataset.params;
+  btn.disabled = true;
+  btn.innerHTML = '<span>⏳</span> Loading…';
+  status.textContent = '';
+  status.className = 'fetch-status';
+  body.innerHTML = '<div class="state-msg">Fetching…</div>';
+  if (raw) { raw.textContent = ''; raw.classList.remove('visible'); }
 
-    const paginateEl = document.getElementById('param-paginate');
-    const searchEl   = document.getElementById('param-search');
-    paginateEl.style.display = currentParams.includes('paginate') ? 'flex' : 'none';
-    searchEl.style.display   = currentParams.includes('search')   ? 'flex' : 'none';
+  try {
+    const url  = buildUrl(section);
+    const res  = await fetch(url);
+    const data = await res.json();
 
-    updatePreview();
-  }
-
-  // ── URL preview ─────────────────────────────────────────────
-  function updatePreview() {
-    const url = buildUrl();
-    document.getElementById('url-preview').textContent = 'GET ' + url;
-  }
-
-  function buildUrl() {
-    let url = '/api/converty' + currentEndpoint;
-    const params = new URLSearchParams();
-    if (currentParams.includes('paginate')) {
-      params.set('page',  document.getElementById('param-page')?.value  || 1);
-      params.set('limit', document.getElementById('param-limit')?.value || 10);
-    }
-    if (currentParams.includes('search')) {
-      const s = document.getElementById('param-search-val')?.value;
-      if (s) params.set('search', s);
-    }
-    const qs = params.toString();
-    return qs ? `${url}?${qs}` : url;
-  }
-
-  // ── Fetch ───────────────────────────────────────────────────
-  async function fetchData() {
-    const btn    = document.getElementById('fetch-btn');
-    const status = document.getElementById('fetch-status');
-    const pre    = document.getElementById('result-pre');
-    const label  = document.getElementById('result-label');
-    const count  = document.getElementById('result-count');
-
-    btn.disabled     = true;
-    btn.textContent  = 'Fetching…';
-    status.textContent = '';
-    status.className   = '';
-    pre.textContent  = 'Loading…';
-    pre.className    = 'empty';
-    label.textContent = `GET /api/converty${currentEndpoint}`;
-    count.textContent = '';
-
-    try {
-      const res  = await fetch(buildUrl());
-      const data = await res.json();
-
-      pre.textContent = JSON.stringify(data, null, 2);
-      pre.className   = '';
-
-      if (res.ok && data.success !== false) {
-        status.textContent = `✓ ${res.status} OK`;
-        status.className   = 'ok';
-        if (data.count != null) count.textContent = `${data.count} total`;
-      } else {
-        status.textContent = `✗ ${res.status} Error`;
-        status.className   = 'err';
-      }
-    } catch (e) {
-      pre.textContent  = e.message;
-      pre.className    = '';
-      status.textContent = '✗ Request failed';
-      status.className   = 'err';
+    if (raw) {
+      raw.textContent = JSON.stringify(data, null, 2);
     }
 
-    btn.disabled    = false;
-    btn.textContent = '⟳ Fetch';
+    if (!res.ok) {
+      status.textContent = '✗ ' + res.status;
+      status.className = 'fetch-status err';
+      body.innerHTML = `<div class="state-msg" style="color:#c62828">${data.error || 'Request failed'}</div>`;
+    } else {
+      status.textContent = '✓ OK';
+      status.className = 'fetch-status ok';
+      render(section, data, body, raw);
+    }
+  } catch (e) {
+    status.textContent = '✗ Network error';
+    status.className = 'fetch-status err';
+    body.innerHTML = `<div class="state-msg" style="color:#c62828">${e.message}</div>`;
   }
 
-  init();
+  btn.disabled = false;
+  btn.innerHTML = '<span>⟳</span> Fetch';
+}
+
+function buildUrl(section) {
+  switch (section) {
+    case 'store':    return '/api/converty/store';
+    case 'webhooks': return '/api/converty/webhooks';
+    case 'products': {
+      const p = new URLSearchParams();
+      p.set('page',  document.getElementById('p-page').value  || 1);
+      p.set('limit', document.getElementById('p-limit').value || 10);
+      const s = document.getElementById('p-search').value.trim();
+      if (s) p.set('search', s);
+      return '/api/converty/products?' + p.toString();
+    }
+    case 'orders': {
+      const p = new URLSearchParams();
+      p.set('page',  document.getElementById('o-page').value  || 1);
+      p.set('limit', document.getElementById('o-limit').value || 10);
+      return '/api/converty/orders?' + p.toString();
+    }
+  }
+}
+
+// ── Renderers ────────────────────────────────────────────────────
+function render(section, data, body, raw) {
+  switch (section) {
+    case 'store':    renderStore(data, body);    break;
+    case 'products': renderProducts(data, body, raw); break;
+    case 'orders':   renderOrders(data, body, raw);   break;
+    case 'webhooks': renderWebhooks(data, body, raw); break;
+  }
+}
+
+// Store info → key-value grid
+function renderStore(data, body) {
+  const d = data.data || data;
+  if (!d) { body.innerHTML = '<div class="state-msg">No data returned.</div>'; return; }
+
+  // Also update the header bar
+  document.getElementById('store-name').textContent = d.name || 'My Store';
+  const meta = [d.currency, d.country, d.domain].filter(Boolean).join(' · ');
+  document.getElementById('store-meta').textContent = meta;
+
+  const fields = [
+    ['Name',     d.name],
+    ['Domain',   d.domain],
+    ['Currency', d.currency],
+    ['Country',  d.country],
+    ['Email',    d.email],
+    ['Phone',    d.phone],
+    ['Plan',     d.plan || d.subscription],
+    ['Status',   d.status],
+    ['ID',       d._id || d.id],
+    ['Created',  d.createdAt ? new Date(d.createdAt).toLocaleDateString() : null],
+  ].filter(([, v]) => v != null);
+
+  if (!fields.length) {
+    // fallback: just show all keys
+    for (const [k, v] of Object.entries(d)) {
+      if (typeof v !== 'object') fields.push([k, v]);
+    }
+  }
+
+  body.innerHTML = `<div class="kv-grid">${
+    fields.map(([k, v]) => `
+      <div class="kv-item">
+        <div class="kv-key">${esc(k)}</div>
+        <div class="kv-val">${esc(String(v))}</div>
+      </div>`).join('')
+  }</div>`;
+}
+
+// Products → table
+function renderProducts(data, body, raw) {
+  const items = data.data || data.products || (Array.isArray(data) ? data : []);
+  const total = data.count ?? data.total ?? items.length;
+
+  if (!items.length) {
+    body.innerHTML = '<div class="state-msg">No products found.</div>'; return;
+  }
+
+  const rows = items.map(p => `
+    <tr>
+      <td><span class="cell-id">${esc(p._id || p.id || '')}</span></td>
+      <td><strong>${esc(p.name || p.title || '—')}</strong></td>
+      <td>${esc(p.sku || '—')}</td>
+      <td>${p.price != null ? formatPrice(p.price, p.currency) : '—'}</td>
+      <td>${p.stock != null ? p.stock : (p.quantity != null ? p.quantity : '—')}</td>
+      <td><span class="cell-badge ${statusBadge(p.status)}">${esc(p.status || '—')}</span></td>
+    </tr>`).join('');
+
+  body.innerHTML = `
+    <div class="data-table-wrap">
+      <table>
+        <thead><tr>
+          <th>ID</th><th>Name</th><th>SKU</th>
+          <th>Price</th><th>Stock</th><th>Status</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+
+  appendPagination(body, total, items.length, raw, 'products');
+}
+
+// Orders → table
+function renderOrders(data, body, raw) {
+  const items = data.data || data.orders || (Array.isArray(data) ? data : []);
+  const total = data.count ?? data.total ?? items.length;
+
+  if (!items.length) {
+    body.innerHTML = '<div class="state-msg">No orders found.</div>'; return;
+  }
+
+  const rows = items.map(o => `
+    <tr>
+      <td><span class="cell-id">${esc(o._id || o.id || '')}</span></td>
+      <td><strong>${esc(o.orderNumber || o.reference || o.number || '—')}</strong></td>
+      <td>${esc(o.customer?.name || o.customer?.email || o.customerName || '—')}</td>
+      <td>${o.total != null ? formatPrice(o.total, o.currency) : '—'}</td>
+      <td><span class="cell-badge ${statusBadge(o.status)}">${esc(o.status || '—')}</span></td>
+      <td>${o.createdAt ? new Date(o.createdAt).toLocaleDateString() : '—'}</td>
+    </tr>`).join('');
+
+  body.innerHTML = `
+    <div class="data-table-wrap">
+      <table>
+        <thead><tr>
+          <th>ID</th><th>Order #</th><th>Customer</th>
+          <th>Total</th><th>Status</th><th>Date</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+
+  appendPagination(body, total, items.length, raw, 'orders');
+}
+
+// Webhooks → table
+function renderWebhooks(data, body, raw) {
+  const items = data.data || data.hooks || data.webhooks || (Array.isArray(data) ? data : []);
+
+  if (!items.length) {
+    body.innerHTML = '<div class="state-msg">No webhooks registered.</div>'; return;
+  }
+
+  const rows = items.map(h => `
+    <tr>
+      <td><span class="cell-id">${esc(h._id || h.id || '')}</span></td>
+      <td><code style="font-size:11px">${esc(h.event || h.topic || '—')}</code></td>
+      <td style="font-size:12px; word-break:break-all">${esc(h.url || h.endpoint || '—')}</td>
+      <td><span class="cell-badge ${h.active === false ? 'badge-grey' : 'badge-green'}">${h.active === false ? 'inactive' : 'active'}</span></td>
+    </tr>`).join('');
+
+  body.innerHTML = `
+    <div class="data-table-wrap">
+      <table>
+        <thead><tr>
+          <th>ID</th><th>Event</th><th>URL</th><th>Status</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+
+  appendPagination(body, items.length, items.length, raw, 'webhooks');
+}
+
+// ── Pagination footer + raw JSON toggle ──────────────────────────
+function appendPagination(body, total, shown, raw, section) {
+  const footer = document.createElement('div');
+  footer.className = 'pagination-row';
+  footer.innerHTML = `
+    <span>Showing <strong>${shown}</strong> of <strong>${total}</strong></span>
+    <button class="json-toggle" onclick="toggleRaw('${section}')">{ } View raw JSON</button>`;
+  body.appendChild(footer);
+}
+
+function toggleRaw(section) {
+  const el = document.getElementById('raw-' + section);
+  if (el) el.classList.toggle('visible');
+}
+
+// ── Helpers ──────────────────────────────────────────────────────
+function esc(str) {
+  return String(str)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function formatPrice(amount, currency) {
+  try {
+    return new Intl.NumberFormat(undefined, {
+      style: 'currency', currency: currency || 'USD',
+    }).format(amount);
+  } catch { return amount + (currency ? ' ' + currency : ''); }
+}
+
+function statusBadge(status) {
+  if (!status) return 'badge-grey';
+  const s = status.toLowerCase();
+  if (['active','paid','completed','delivered','published'].some(x => s.includes(x))) return 'badge-green';
+  if (['pending','processing','draft'].some(x => s.includes(x)))                       return 'badge-orange';
+  if (['shipped','in transit','confirmed'].some(x => s.includes(x)))                   return 'badge-blue';
+  return 'badge-grey';
+}
+
+init();
 </script>
 </body>
 </html>
