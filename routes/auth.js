@@ -60,8 +60,16 @@ router.get('/oauth/callback', async (req, res) => {
       expires_at: Date.now() + expires_in * 1000,
     };
 
-    console.log('✅ Converty OAuth success — tokens stored in session');
-    res.redirect('/');
+    // Explicitly save the session before redirecting to avoid a race condition
+    // where the redirect fires before the session write completes.
+    req.session.save((saveErr) => {
+      if (saveErr) {
+        console.error('❌ Session save failed:', saveErr);
+        return res.status(500).json({ error: 'Session save failed' });
+      }
+      console.log('✅ Converty OAuth success — tokens stored in session');
+      res.redirect('/');
+    });
   } catch (err) {
     console.error('❌ Token exchange failed:', err.response?.data || err.message);
     res.status(500).json({ error: 'Token exchange failed', details: err.response?.data });
@@ -105,7 +113,7 @@ async function getValidToken(req) {
 // GET /integrations/converty/disconnect
 router.get('/disconnect', (req, res) => {
   delete req.session.converty;
-  res.redirect('/');
+  req.session.save(() => res.redirect('/'));
 });
 
 // ── Auth status ────────────────────────────────────────────────
