@@ -124,29 +124,45 @@ router.get('/token-info', requireAuth, async (req, res) => {
 // ── Debug: raw probe of Converty API endpoints ─────────────────
 router.get('/probe', requireAuth, async (req, res) => {
   const token = req.session.converty.access_token;
-  const endpoints = [
-    '/stores/me',
-    '/store/me',
-    '/stores',
-    '/store',
-    '/products',
-    '/orders',
-  ];
 
-  const results = {};
-  for (const ep of endpoints) {
-    const url = `${BASE_URL}${ep}`;
+  const hit = async (url, headers) => {
     try {
-      const r = await axios.get(url, {
-        headers: { Authorization: `Bearer ${token}` },
-        validateStatus: () => true, // don't throw on any status
-      });
-      results[ep] = { status: r.status, body: r.data };
-    } catch (e) {
-      results[ep] = { error: e.message };
+      const r = await axios.get(url, { headers, validateStatus: () => true });
+      return { status: r.status, body: typeof r.data === 'string' ? r.data.substring(0, 80) : r.data };
+    } catch (e) { return { error: e.message }; }
+  };
+
+  // Test different base URLs
+  const bases = [
+    'https://partner.converty.shop/api/v1',
+    'https://partner.converty.shop/api/v2',
+    'https://partner.converty.shop/api',
+    'https://partner.converty.shop/v1',
+  ];
+  const paths = ['/store', '/stores/me', '/products', '/orders', '/hooks'];
+
+  const byBase = {};
+  for (const base of bases) {
+    byBase[base] = {};
+    for (const path of paths) {
+      byBase[base][path] = await hit(base + path, { Authorization: `Bearer ${token}` });
     }
   }
-  res.json(results);
+
+  // Test different auth header formats on the known-good path
+  const authFormats = {
+    'Bearer token':  { Authorization: `Bearer ${token}` },
+    'Token token':   { Authorization: `Token ${token}` },
+    'raw token':     { Authorization: token },
+    'X-Auth-Token':  { 'X-Auth-Token': token },
+    'no auth':       {},
+  };
+  const authTest = {};
+  for (const [name, headers] of Object.entries(authFormats)) {
+    authTest[name] = await hit('https://partner.converty.shop/api/v1/store', headers);
+  }
+
+  res.json({ byBase, authTest });
 });
 
 // ─────────────────────────────────────────────────────────────
