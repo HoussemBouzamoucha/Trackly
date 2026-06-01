@@ -110,16 +110,26 @@ router.get('/webhooks', requireAuth, async (req, res) => {
   }
 });
 
+// ── Debug: inspect stored token (remove after confirming) ─────
+router.get('/token-info', requireAuth, async (req, res) => {
+  const s = req.session.converty;
+  res.json({
+    token_preview:  s.access_token?.substring(0, 40) + '...',
+    expires_at:     new Date(s.expires_at).toISOString(),
+    expires_in_min: Math.round((s.expires_at - Date.now()) / 60000),
+    test_url:       `${BASE_URL}/stores/me`,
+  });
+});
+
 // ─────────────────────────────────────────────────────────────
 // Error handler
 // ─────────────────────────────────────────────────────────────
 function handleError(res, err) {
-  console.error('Converty API error:', err.response?.data || err.message);
-  const status = err.response?.status || 500;
-  res.status(status).json({
-    error: err.response?.data?.message || err.message,
-    details: err.response?.data || null,
-  });
+  const status  = err.response?.status || 500;
+  const body    = err.response?.data;
+  const message = body?.message || err.message;
+  console.error(`Converty API ${status}:`, body || err.message);
+  res.status(status).json({ error: message, details: body || null, status });
 }
 
 module.exports = router;
