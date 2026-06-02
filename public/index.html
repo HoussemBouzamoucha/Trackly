@@ -74,14 +74,43 @@
     .store-info { flex: 1; }
     .store-name { font-size: 17px; font-weight: 600; }
     .store-meta { font-size: 13px; color: #888; margin-top: 3px; }
-    .btn-disconnect {
-      background: #fff0f0; color: #c62828;
-      border: 1px solid #f5c6c6; border-radius: 8px;
-      padding: 8px 18px; font-size: 13px; font-weight: 500;
+    /* ── Store switcher ── */
+    .store-switcher-wrap {
+      background: #fff;
+      border: 1px solid #e2e2da;
+      border-radius: 14px;
+      padding: 20px 24px;
+      margin-bottom: 24px;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 16px; flex-wrap: wrap;
+    }
+    .store-switcher-left { display: flex; align-items: center; gap: 14px; flex: 1; }
+    .store-switcher-info { flex: 1; }
+    .store-switcher-name { font-size: 17px; font-weight: 600; }
+    .store-switcher-meta { font-size: 13px; color: #888; margin-top: 3px; }
+    .store-switcher-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .store-select {
+      border: 1px solid #e2e2da; border-radius: 8px;
+      padding: 8px 12px; font-size: 13px; background: #fafaf7;
+      cursor: pointer; max-width: 240px;
+    }
+    .store-select:focus { outline: none; border-color: #534AB7; }
+    .btn-add-store {
+      background: #f0eeff; color: #534AB7;
+      border: 1px solid #d4cfff; border-radius: 8px;
+      padding: 8px 16px; font-size: 13px; font-weight: 500;
       text-decoration: none; white-space: nowrap;
       transition: background 0.15s;
     }
-    .btn-disconnect:hover { background: #ffe0e0; }
+    .btn-add-store:hover { background: #e2deff; }
+    .btn-disconnect-store {
+      background: #fff0f0; color: #c62828;
+      border: 1px solid #f5c6c6; border-radius: 8px;
+      padding: 8px 16px; font-size: 13px; font-weight: 500;
+      cursor: pointer; white-space: nowrap;
+      transition: background 0.15s;
+    }
+    .btn-disconnect-store:hover { background: #ffe0e0; }
 
     /* ── Section cards ── */
     .section {
@@ -228,14 +257,20 @@
   <!-- ── Dashboard ── -->
   <div id="dashboard">
 
-    <!-- Store identity bar -->
-    <div class="store-card">
-      <div class="store-avatar">🏪</div>
-      <div class="store-info">
-        <div class="store-name" id="store-name">Loading…</div>
-        <div class="store-meta" id="store-meta"></div>
+    <!-- Store switcher bar -->
+    <div class="store-switcher-wrap">
+      <div class="store-switcher-left">
+        <div class="store-avatar">🏪</div>
+        <div class="store-switcher-info">
+          <div class="store-switcher-name" id="store-name">Loading…</div>
+          <div class="store-switcher-meta" id="store-meta"></div>
+        </div>
       </div>
-      <a href="/integrations/converty/disconnect" class="btn-disconnect">Disconnect</a>
+      <div class="store-switcher-right">
+        <select class="store-select" id="store-select" onchange="switchStore(this.value)" title="Switch store" style="display:none"></select>
+        <a href="/integrations/converty/connect" class="btn-add-store">+ Add store</a>
+        <button class="btn-disconnect-store" onclick="disconnectActive()">Disconnect</button>
+      </div>
     </div>
 
     <!-- ── Store info section ── -->
@@ -355,12 +390,16 @@
 
 <script>
 // ── Init ────────────────────────────────────────────────────────
+let _storeState = { stores: [], activeStoreId: null };
+
 async function init() {
   try {
     const res  = await fetch('/integrations/converty/status');
     const data = await res.json();
-    if (data.connected) {
+    if (data.connected && data.stores.length > 0) {
+      _storeState = data;
       showDashboard();
+      populateStoreSwitcher(data.stores, data.activeStoreId);
       fetchSection('store');
     }
   } catch (e) {
@@ -370,11 +409,55 @@ async function init() {
 
 function showDashboard() {
   document.getElementById('connect-screen').style.display = 'none';
-  const dash = document.getElementById('dashboard');
-  dash.style.display = 'block';
+  document.getElementById('dashboard').style.display = 'block';
   const badge = document.getElementById('status-badge');
   badge.textContent = 'Connected';
   badge.classList.add('connected');
+}
+
+// ── Store switcher ───────────────────────────────────────────────
+function populateStoreSwitcher(stores, activeStoreId) {
+  const sel = document.getElementById('store-select');
+  sel.innerHTML = stores.map(s =>
+    `<option value="${esc(s.id)}" ${s.id === activeStoreId ? 'selected' : ''}>${esc(s.name)}${s.domain ? ' — ' + esc(s.domain) : ''}</option>`
+  ).join('');
+  sel.style.display = stores.length > 1 ? 'block' : 'none';
+
+  const active = stores.find(s => s.id === activeStoreId) || stores[0];
+  if (active) {
+    document.getElementById('store-name').textContent = active.name;
+    document.getElementById('store-meta').textContent = active.domain || '';
+  }
+}
+
+async function switchStore(storeId) {
+  if (!storeId || storeId === _storeState.activeStoreId) return;
+  try {
+    const res  = await fetch(`/integrations/converty/stores/${encodeURIComponent(storeId)}/activate`);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Activate failed');
+
+    _storeState.activeStoreId = storeId;
+    populateStoreSwitcher(_storeState.stores, storeId);
+
+    ['store', 'products', 'orders', 'webhooks'].forEach(sec => {
+      const body = document.getElementById('body-' + sec);
+      if (body) body.innerHTML = '<div class="state-msg">Store switched — click Fetch to reload.</div>';
+    });
+    fetchSection('store');
+  } catch (e) {
+    alert('Could not switch store: ' + e.message);
+    document.getElementById('store-select').value = _storeState.activeStoreId;
+  }
+}
+
+function disconnectActive() {
+  const storeId = _storeState.activeStoreId;
+  if (!storeId) return;
+  const store = _storeState.stores.find(s => s.id === storeId);
+  const name  = store ? store.name : storeId;
+  if (!confirm(`Disconnect "${name}"?`)) return;
+  window.location.href = `/integrations/converty/stores/${encodeURIComponent(storeId)}/disconnect`;
 }
 
 // ── Generic fetch for any section ───────────────────────────────
@@ -461,11 +544,6 @@ function renderStore(data, body) {
     if (typeof v !== 'object') return String(v);
     return v.name || v.code || v.label || v.symbol || v.value || JSON.stringify(v);
   }
-
-  // Also update the header bar
-  document.getElementById('store-name').textContent = d.name || 'My Store';
-  const meta = [flat(d.currency), flat(d.country), d.domain].filter(Boolean).join(' · ');
-  document.getElementById('store-meta').textContent = meta;
 
   const fields = [
     ['Name',     d.name],
