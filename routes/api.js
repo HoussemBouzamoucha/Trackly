@@ -3,7 +3,7 @@ const router  = express.Router();
 const axios   = require('axios');
 const { getValidToken } = require('./auth');
 
-const BASE_URL = 'https://partner.converty.shop/api/v1';
+const BASE_URL = 'https://api.converty.shop/api/v1/store';
 
 // ── Middleware: ensure connected ───────────────────────────────
 function requireAuth(req, res, next) {
@@ -134,10 +134,10 @@ router.get('/probe', requireAuth, async (req, res) => {
 
   // Test different base URLs
   const bases = [
-    'https://partner.converty.shop/api/v1',
-    'https://partner.converty.shop/api/v2',
-    'https://partner.converty.shop/api',
-    'https://partner.converty.shop/v1',
+    'https://api.converty.shop/api/v1/store',
+    'https://api.converty.shop/api/v1',
+    'https://api.converty.shop/api/v2',
+    'https://api.converty.shop/api',
   ];
   const paths = ['/store', '/stores/me', '/products', '/orders', '/hooks'];
 
@@ -159,7 +159,7 @@ router.get('/probe', requireAuth, async (req, res) => {
   };
   const authTest = {};
   for (const [name, headers] of Object.entries(authFormats)) {
-    authTest[name] = await hit('https://partner.converty.shop/api/v1/store', headers);
+    authTest[name] = await hit('https://api.converty.shop/api/v1/store', headers);
   }
 
   res.json({ byBase, authTest });
