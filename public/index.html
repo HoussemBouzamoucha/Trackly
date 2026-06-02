@@ -209,6 +209,12 @@
               letter-spacing: 0.5px; margin-bottom: 4px; }
     .kv-val { font-size: 14px; font-weight: 500; word-break: break-all; }
 
+    /* Order product lines */
+    .order-product-line { margin-bottom: 4px; }
+    .order-product-line:last-child { margin-bottom: 0; }
+    .order-product-name { font-weight: 500; display: block; }
+    .order-product-meta { font-size: 11px; color: #888; }
+
     /* Empty / loading states */
     .state-msg {
       padding: 32px; text-align: center; color: #bbb; font-size: 13px;
@@ -611,34 +617,77 @@ function renderProducts(data, body, raw) {
 // Orders → table
 function renderOrders(data, body, raw) {
   const items = data.data || data.orders || (Array.isArray(data) ? data : []);
-  const total = data.count ?? data.total ?? items.length;
+  const totalCount = data.count ?? data.total ?? items.length;
 
   if (!items.length) {
     body.innerHTML = '<div class="state-msg">No orders found.</div>'; return;
   }
 
-  const rows = items.map(o => `
-    <tr>
-      <td><span class="cell-id">${esc(o._id || o.id || '')}</span></td>
-      <td><strong>${esc(o.orderNumber || o.reference || o.number || '—')}</strong></td>
-      <td>${esc(o.customer?.name || o.customer?.email || o.customerName || '—')}</td>
-      <td>${formatTotal(o.total ?? o.totalPrice ?? o.amount ?? o.price ?? o.subtotal ?? o.grandTotal, o.currency)}</td>
+  const rows = items.map(o => {
+    const cur = o.currencyCode || 'TND';
+    const t   = o.total || {};
+
+    // Cart items → product lines
+    const cart = Array.isArray(o.cart) ? o.cart : [];
+    const productLines = cart.map(item => {
+      const name = item.product?.name || '—';
+      const qty  = item.quantity || 1;
+      const unit = item.pricePerUnit ?? item.product?.price ?? 0;
+      return `<div class="order-product-line">
+        <span class="order-product-name">${esc(name)}</span>
+        <span class="order-product-meta">× ${qty} &nbsp;·&nbsp; ${formatTotal(unit, cur)}</span>
+      </div>`;
+    }).join('') || '<span style="color:#bbb">—</span>';
+
+    // Delivery charged to customer
+    const delivCharged = t.deliveryPrice ?? 0;
+    const delivBadge = delivCharged === 0
+      ? '<span class="cell-badge badge-green">Free</span>'
+      : `<span class="cell-badge badge-orange">${formatTotal(delivCharged, cur)}</span>`;
+
+    // Delivery cost borne by merchant
+    const delivCost = t.deliveryCost ?? 0;
+    const delivCostStr = delivCost > 0 ? formatTotal(delivCost, cur) : '<span style="color:#bbb">—</span>';
+
+    // Customer info
+    const custName  = o.customer?.name  || '—';
+    const custPhone = o.customer?.phone || '';
+    const custCity  = o.customer?.city  || '';
+    const returning = o.customer?.hasOtherOrders
+      ? '<span class="cell-badge badge-blue" title="Returning customer">↩ returning</span>' : '';
+
+    const dupFlag = o.duplicated
+      ? '<span class="cell-badge badge-orange" style="margin-left:4px">dup</span>' : '';
+
+    return `<tr>
+      <td><strong>#${esc(String(o.reference || '—'))}</strong>${dupFlag}</td>
+      <td>${productLines}</td>
+      <td>
+        <div style="font-weight:500">${esc(custName)}</div>
+        <div style="font-size:11px;color:#888">${esc(custPhone)}${custCity ? ' · ' + esc(custCity) : ''}</div>
+        ${returning}
+      </td>
+      <td>${formatTotal(t.totalPrice ?? t.basePrice, cur)}</td>
+      <td>${delivBadge}</td>
+      <td>${delivCostStr}</td>
       <td><span class="cell-badge ${statusBadge(o.status)}">${esc(o.status || '—')}</span></td>
-      <td>${o.createdAt ? new Date(o.createdAt).toLocaleDateString() : '—'}</td>
-    </tr>`).join('');
+      <td style="white-space:nowrap">${o.createdAt ? new Date(o.createdAt).toLocaleDateString() : '—'}</td>
+    </tr>`;
+  }).join('');
 
   body.innerHTML = `
     <div class="data-table-wrap">
       <table>
         <thead><tr>
-          <th>ID</th><th>Order #</th><th>Customer</th>
-          <th>Total</th><th>Status</th><th>Date</th>
+          <th>Order #</th><th>Product</th><th>Customer</th>
+          <th>Total</th><th>Delivery (customer)</th><th>Delivery cost</th>
+          <th>Status</th><th>Date</th>
         </tr></thead>
         <tbody>${rows}</tbody>
       </table>
     </div>`;
 
-  appendPagination(body, total, items.length, raw, 'orders');
+  appendPagination(body, totalCount, items.length, raw, 'orders');
 }
 
 // Webhooks → table
