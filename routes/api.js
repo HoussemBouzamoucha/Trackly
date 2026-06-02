@@ -32,7 +32,7 @@ async function convertyGet(req, endpoint, params = {}) {
 // Returns info about the connected seller's store
 router.get('/store', requireAuth, async (req, res) => {
   try {
-    const data = await convertyGet(req, '/store');
+    const data = await convertyGet(req, '/stores/me');
     res.json(data);
   } catch (err) {
     handleError(res, err);
