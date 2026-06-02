@@ -8,8 +8,11 @@ const pool = process.env.DATABASE_URL
     })
   : null;
 
+// ── In-memory fallback (used when DATABASE_URL is not set) ──────
+const mem = new Map();
+
 if (!pool) {
-  console.warn('⚠️  DATABASE_URL not set — stores will not persist across restarts.');
+  console.warn('⚠️  DATABASE_URL not set — using in-memory store (data lost on restart). Add a PostgreSQL service on Railway for persistence.');
 }
 
 // ── Schema init ─────────────────────────────────────────────────
@@ -30,13 +33,13 @@ async function initDb() {
 
 // ── CRUD ────────────────────────────────────────────────────────
 async function getAllStores() {
-  if (!pool) return [];
+  if (!pool) return Array.from(mem.values());
   const { rows } = await pool.query('SELECT * FROM connected_stores');
   return rows;
 }
 
 async function getStore(id) {
-  if (!pool) return null;
+  if (!pool) return mem.get(id) || null;
   const { rows } = await pool.query(
     'SELECT * FROM connected_stores WHERE id = $1',
     [id]
@@ -45,7 +48,7 @@ async function getStore(id) {
 }
 
 async function upsertStore(store) {
-  if (!pool) return;
+  if (!pool) { mem.set(store.id, store); return; }
   await pool.query(
     `INSERT INTO connected_stores (id, name, domain, access_token, refresh_token, expires_at)
      VALUES ($1, $2, $3, $4, $5, $6)
@@ -60,12 +63,12 @@ async function upsertStore(store) {
 }
 
 async function deleteStore(id) {
-  if (!pool) return;
+  if (!pool) { mem.delete(id); return; }
   await pool.query('DELETE FROM connected_stores WHERE id = $1', [id]);
 }
 
 async function deleteAllStores() {
-  if (!pool) return;
+  if (!pool) { mem.clear(); return; }
   await pool.query('DELETE FROM connected_stores');
 }
 
