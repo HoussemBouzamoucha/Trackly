@@ -509,18 +509,19 @@ function renderProducts(data, body, raw) {
     <tr>
       <td><span class="cell-id">${esc(p._id || p.id || '')}</span></td>
       <td><strong>${esc(p.name || p.title || '—')}</strong></td>
-      <td>${esc(p.sku || p.reference || p.code || '—')}</td>
-      <td>${p.price != null ? formatPrice(p.price, p.currency?.code || p.currency) : '—'}</td>
+      <td>${formatTotal(p.price, 'TND')}</td>
+      <td>${formatTotal(p.delivery ?? p.deliveryCost ?? p.shippingCost ?? p.deliveryPrice, 'TND')}</td>
       <td>${p.stock != null ? p.stock : (p.quantity != null ? p.quantity : (p.inventory != null ? p.inventory : '—'))}</td>
       <td><span class="cell-badge ${statusBadge(p.status)}">${esc(p.status || '—')}</span></td>
+      <td>${p.adsLink || p.adLink || p.ads_link || p.link ? `<a href="${esc(p.adsLink || p.adLink || p.ads_link || p.link)}" target="_blank" style="font-size:11px;color:#534AB7">View</a>` : '—'}</td>
     </tr>`).join('');
 
   body.innerHTML = `
     <div class="data-table-wrap">
       <table>
         <thead><tr>
-          <th>ID</th><th>Name</th><th>SKU</th>
-          <th>Price</th><th>Stock</th><th>Status</th>
+          <th>ID</th><th>Name</th><th>Price</th>
+          <th>Delivery</th><th>Stock</th><th>Status</th><th>Ads Link</th>
         </tr></thead>
         <tbody>${rows}</tbody>
       </table>
@@ -615,15 +616,20 @@ function esc(str) {
 
 function formatTotal(raw, currency) {
   if (raw == null) return '—';
-  // Handle combined string like "69.0TND" or "1200.00DZD"
+  const cur = currency?.code || currency || 'TND';
   if (typeof raw === 'string') {
-    const m = raw.match(/^([\d.]+)([A-Z]{3})$/);
-    if (m) return formatPrice(parseFloat(m[1]), m[2]);
-    const num = parseFloat(raw);
-    if (!isNaN(num)) return formatPrice(num, currency?.code || currency);
-    return raw; // fallback: show as-is
+    // "69.0TND" or "1200.00DZD" — number then 3-letter code
+    const m = raw.match(/^([\d.,]+)\s*([A-Z]{3})$/);
+    if (m) return formatPrice(parseFloat(m[1].replace(',', '.')), m[2]);
+    // "TND 69.0" — code then number
+    const m2 = raw.match(/^([A-Z]{3})\s*([\d.,]+)$/);
+    if (m2) return formatPrice(parseFloat(m2[2].replace(',', '.')), m2[1]);
+    const num = parseFloat(raw.replace(',', '.'));
+    if (!isNaN(num)) return formatPrice(num, cur);
+    return raw.trim() || '—';
   }
-  return formatPrice(raw, currency?.code || currency);
+  if (typeof raw === 'number' && isNaN(raw)) return '—';
+  return formatPrice(raw, cur);
 }
 
 function formatPrice(amount, currency) {
