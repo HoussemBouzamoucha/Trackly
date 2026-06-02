@@ -3,7 +3,7 @@ const router  = express.Router();
 const axios   = require('axios');
 const { getValidToken } = require('./auth');
 
-const BASE_URL = 'https://api.converty.shop/api/v1/store';
+const BASE_URL = 'https://api.converty.shop/api/v1';
 
 // ── Middleware: ensure connected ───────────────────────────────
 function requireAuth(req, res, next) {
@@ -32,7 +32,7 @@ async function convertyGet(req, endpoint, params = {}) {
 // Returns info about the connected seller's store
 router.get('/store', requireAuth, async (req, res) => {
   try {
-    const data = await convertyGet(req, '/stores/me');
+    const data = await convertyGet(req, '/store');
     res.json(data);
   } catch (err) {
     handleError(res, err);
@@ -134,10 +134,10 @@ router.get('/probe', requireAuth, async (req, res) => {
 
   // Test different base URLs
   const bases = [
-    'https://api.converty.shop/api/v1/store',
     'https://api.converty.shop/api/v1',
     'https://api.converty.shop/api/v2',
     'https://api.converty.shop/api',
+    'https://api.converty.shop/v1',
   ];
   const paths = ['/store', '/stores/me', '/products', '/orders', '/hooks'];
 
