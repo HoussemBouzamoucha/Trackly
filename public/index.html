@@ -617,9 +617,9 @@ function esc(str) {
 function formatTotal(raw, currency) {
   if (raw == null) return '—';
   const cur = currency?.code || currency || 'TND';
-  // Handle nested object: { amount: 69, currency: "TND" } or { value: 69, ... }
+  // Handle nested object: { totalPrice, basePrice, deliveryCost, deliveryPrice, ... }
   if (typeof raw === 'object') {
-    const amount = raw.amount ?? raw.value ?? raw.total ?? raw.price;
+    const amount = raw.totalPrice ?? raw.basePrice ?? raw.amount ?? raw.value ?? raw.total ?? raw.price;
     const objCur = raw.currency?.code || raw.currency || cur;
     return formatTotal(amount, objCur);
   }
