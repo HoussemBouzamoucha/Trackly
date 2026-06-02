@@ -455,16 +455,23 @@ function renderStore(data, body) {
   const d = data.data || data;
   if (!d) { body.innerHTML = '<div class="state-msg">No data returned.</div>'; return; }
 
+  // Flatten nested objects to a display string
+  function flat(v) {
+    if (v == null) return null;
+    if (typeof v !== 'object') return String(v);
+    return v.name || v.code || v.label || v.symbol || v.value || JSON.stringify(v);
+  }
+
   // Also update the header bar
   document.getElementById('store-name').textContent = d.name || 'My Store';
-  const meta = [d.currency, d.country, d.domain].filter(Boolean).join(' · ');
+  const meta = [flat(d.currency), flat(d.country), d.domain].filter(Boolean).join(' · ');
   document.getElementById('store-meta').textContent = meta;
 
   const fields = [
     ['Name',     d.name],
     ['Domain',   d.domain],
-    ['Currency', d.currency],
-    ['Country',  d.country],
+    ['Currency', flat(d.currency)],
+    ['Country',  flat(d.country)],
     ['Email',    d.email],
     ['Phone',    d.phone],
     ['Plan',     d.plan || d.subscription],
@@ -502,9 +509,9 @@ function renderProducts(data, body, raw) {
     <tr>
       <td><span class="cell-id">${esc(p._id || p.id || '')}</span></td>
       <td><strong>${esc(p.name || p.title || '—')}</strong></td>
-      <td>${esc(p.sku || '—')}</td>
-      <td>${p.price != null ? formatPrice(p.price, p.currency) : '—'}</td>
-      <td>${p.stock != null ? p.stock : (p.quantity != null ? p.quantity : '—')}</td>
+      <td>${esc(p.sku || p.reference || p.code || '—')}</td>
+      <td>${p.price != null ? formatPrice(p.price, p.currency?.code || p.currency) : '—'}</td>
+      <td>${p.stock != null ? p.stock : (p.quantity != null ? p.quantity : (p.inventory != null ? p.inventory : '—'))}</td>
       <td><span class="cell-badge ${statusBadge(p.status)}">${esc(p.status || '—')}</span></td>
     </tr>`).join('');
 
@@ -536,7 +543,7 @@ function renderOrders(data, body, raw) {
       <td><span class="cell-id">${esc(o._id || o.id || '')}</span></td>
       <td><strong>${esc(o.orderNumber || o.reference || o.number || '—')}</strong></td>
       <td>${esc(o.customer?.name || o.customer?.email || o.customerName || '—')}</td>
-      <td>${o.total != null ? formatPrice(o.total, o.currency) : '—'}</td>
+      <td>${(() => { const t = o.total ?? o.totalPrice ?? o.amount ?? o.price ?? o.subtotal ?? o.grandTotal; return t != null ? formatPrice(t, o.currency?.code || o.currency) : '—'; })()}</td>
       <td><span class="cell-badge ${statusBadge(o.status)}">${esc(o.status || '—')}</span></td>
       <td>${o.createdAt ? new Date(o.createdAt).toLocaleDateString() : '—'}</td>
     </tr>`).join('');
