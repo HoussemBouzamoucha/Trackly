@@ -2,15 +2,19 @@ const express = require('express');
 const router  = express.Router();
 const axios   = require('axios');
 const { getValidToken } = require('./auth');
+const db = require('../db');
 
 const BASE_URL = 'https://api.converty.shop/api/v1';
 
 // ── Middleware: ensure connected ───────────────────────────────
-function requireAuth(req, res, next) {
+async function requireAuth(req, res, next) {
   const storeId = req.session.activeStoreId;
-  const stores  = req.session.convertyStores;
-  if (!storeId || !stores || !stores[storeId]) {
+  if (!storeId) {
     return res.status(401).json({ error: 'Not connected to Converty. Visit /integrations/converty/connect first.' });
+  }
+  const store = await db.getStore(storeId);
+  if (!store) {
+    return res.status(401).json({ error: 'Store not found — please reconnect.' });
   }
   next();
 }
@@ -114,21 +118,21 @@ router.get('/webhooks', requireAuth, async (req, res) => {
 
 // ── Debug: inspect stored token (remove after confirming) ─────
 router.get('/token-info', requireAuth, async (req, res) => {
-  const storeId = req.session.activeStoreId;
-  const s = req.session.convertyStores[storeId];
+  const s = await db.getStore(req.session.activeStoreId);
   res.json({
-    store_id:       storeId,
+    store_id:       s.id,
     store_name:     s.name,
     token_preview:  s.access_token?.substring(0, 40) + '...',
-    expires_at:     new Date(s.expires_at).toISOString(),
-    expires_in_min: Math.round((s.expires_at - Date.now()) / 60000),
+    expires_at:     new Date(Number(s.expires_at)).toISOString(),
+    expires_in_min: Math.round((Number(s.expires_at) - Date.now()) / 60000),
     test_url:       `${BASE_URL}/stores/me`,
   });
 });
 
 // ── Debug: raw probe of Converty API endpoints ─────────────────
 router.get('/probe', requireAuth, async (req, res) => {
-  const token = req.session.convertyStores[req.session.activeStoreId].access_token;
+  const store = await db.getStore(req.session.activeStoreId);
+  const token = store.access_token;
 
   const hit = async (url, headers) => {
     try {

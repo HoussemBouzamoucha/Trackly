@@ -1,7 +1,8 @@
 require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
-const path = require('path');
+const path    = require('path');
+const db      = require('./db');
 
 const authRoutes = require('./routes/auth');
 const apiRoutes  = require('./routes/api');
@@ -37,7 +38,12 @@ app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
 // ─────────────────────────────────────────────
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`\n🚀 Server running at http://localhost:${PORT}`);
-  console.log(`📋 Open http://localhost:${PORT} in your browser\n`);
+db.initDb().then(() => {
+  app.listen(PORT, () => {
+    console.log(`\n🚀 Server running at http://localhost:${PORT}`);
+    console.log(`📋 Open http://localhost:${PORT} in your browser\n`);
+  });
+}).catch(err => {
+  console.error('❌ Failed to initialise database:', err);
+  process.exit(1);
 });
