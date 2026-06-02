@@ -617,6 +617,12 @@ function esc(str) {
 function formatTotal(raw, currency) {
   if (raw == null) return '—';
   const cur = currency?.code || currency || 'TND';
+  // Handle nested object: { amount: 69, currency: "TND" } or { value: 69, ... }
+  if (typeof raw === 'object') {
+    const amount = raw.amount ?? raw.value ?? raw.total ?? raw.price;
+    const objCur = raw.currency?.code || raw.currency || cur;
+    return formatTotal(amount, objCur);
+  }
   if (typeof raw === 'string') {
     // "69.0TND" or "1200.00DZD" — number then 3-letter code
     const m = raw.match(/^([\d.,]+)\s*([A-Z]{3})$/);
