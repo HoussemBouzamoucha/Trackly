@@ -4,8 +4,11 @@ const session = require('express-session');
 const path    = require('path');
 const db      = require('./db');
 
-const authRoutes = require('./routes/auth');
-const apiRoutes  = require('./routes/api');
+const authRoutes          = require('./routes/auth');
+const apiRoutes           = require('./routes/api');
+const metaAdsRoutes       = require('./routes/metaAds');
+const firstDeliveryRoutes = require('./routes/firstDelivery');
+const tictacRoutes        = require('./routes/tictac');
 
 const app = express();
 
