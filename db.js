@@ -28,6 +28,7 @@ async function initDb() {
       expires_at    BIGINT  NOT NULL
     )
   `);
+  await initTictacTable();
   console.log('✅ Database ready');
 }
 
