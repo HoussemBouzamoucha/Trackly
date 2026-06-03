@@ -150,5 +150,5 @@ async function deleteColis(code_barre) {
 
 module.exports = {
   initDb, getAllStores, getStore, upsertStore, deleteStore, deleteAllStores,
-  initTictacTable, upsertColis, getColisById, deleteColis,
+  initTictacTable, upsertColis, getColisById, getAllColis, deleteColis,
 };
