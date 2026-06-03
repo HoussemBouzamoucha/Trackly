@@ -135,6 +135,14 @@ async function getColisById(code_barre) {
   return rows[0] || null;
 }
 
+async function getAllColis() {
+  if (!pool) return [];
+  const { rows } = await pool.query(
+    'SELECT * FROM tictac_colis ORDER BY synced_at DESC'
+  );
+  return rows;
+}
+
 async function deleteColis(code_barre) {
   if (!pool) return;
   await pool.query('DELETE FROM tictac_colis WHERE code_barre = $1', [code_barre]);
