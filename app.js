@@ -34,7 +34,10 @@ app.use(session({
 
 // ── Routes ──────────────────────────────────
 app.use('/integrations/converty', authRoutes);
-app.use('/api/converty', apiRoutes);
+app.use('/api/converty',       apiRoutes);
+app.use('/api/meta',           metaAdsRoutes);
+app.use('/api/firstdelivery',  firstDeliveryRoutes);
+app.use('/api/tictac',         tictacRoutes);
 
 // ── Health check ────────────────────────────
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
