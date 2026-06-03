@@ -13,7 +13,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "file=$(jq -r '.tool_input.file_path // \"file\"' 2>/dev/null); fname=$(basename \"$file\"); git add . && (git diff --cached --quiet || (git commit -m \"auto: update $fname\" && git push)) 2>/dev/null || true",
+            "command": "git add . && (git diff --cached --quiet || (msg=$(git diff --cached --name-only | head -5 | tr '\\n' ' ' | sed 's/ $//'); git commit -m \"auto: update $msg\" && git push)) 2>/dev/null || true",
             "timeout": 60,
             "statusMessage": "Committing and pushing..."
           }
