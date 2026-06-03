@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Trackly — Store Dashboard</title>
+  <title>Trackly</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -13,35 +13,46 @@
     header {
       background: #fff;
       border-bottom: 1px solid #e2e2da;
-      padding: 14px 28px;
-      display: flex; align-items: center; justify-content: space-between;
-      position: sticky; top: 0; z-index: 10;
+      padding: 0 28px;
+      display: flex; align-items: center; gap: 24px;
+      position: sticky; top: 0; z-index: 10; height: 54px;
     }
-    .logo { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
+    .logo { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; flex-shrink: 0; }
     .logo span { color: #534AB7; }
+
+    /* ── Nav tabs ── */
+    nav { display: flex; gap: 2px; flex: 1; }
+    .nav-tab {
+      background: none; border: none; cursor: pointer;
+      padding: 0 16px; height: 54px; font-size: 13px; font-weight: 500;
+      color: #888; border-bottom: 2px solid transparent;
+      transition: color 0.15s, border-color 0.15s;
+      white-space: nowrap;
+    }
+    .nav-tab:hover { color: #1a1a1a; }
+    .nav-tab.active { color: #534AB7; border-bottom-color: #534AB7; }
+
     .badge {
       font-size: 12px; padding: 4px 12px; border-radius: 20px;
-      background: #f0f0ea; color: #888; font-weight: 500;
+      background: #f0f0ea; color: #888; font-weight: 500; flex-shrink: 0;
     }
     .badge.connected { background: #e8f5e9; color: #2e7d32; }
 
     /* ── Layout ── */
-    main { max-width: 1000px; margin: 0 auto; padding: 28px 20px; }
+    main { max-width: 1080px; margin: 0 auto; padding: 28px 20px; }
+
+    /* ── Tab panels ── */
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
 
     /* ── Connect screen ── */
     #connect-screen {
-      background: #fff;
-      border: 1px solid #e2e2da;
-      border-radius: 16px;
-      padding: 56px 32px;
-      text-align: center;
-      max-width: 460px;
-      margin: 60px auto;
+      background: #fff; border: 1px solid #e2e2da; border-radius: 16px;
+      padding: 56px 32px; text-align: center; max-width: 460px; margin: 60px auto;
     }
     #connect-screen .icon {
-      width: 56px; height: 56px; border-radius: 14px;
-      background: #f0eeff; display: flex; align-items: center;
-      justify-content: center; margin: 0 auto 20px; font-size: 26px;
+      width: 56px; height: 56px; border-radius: 14px; background: #f0eeff;
+      display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; font-size: 26px;
     }
     #connect-screen h2 { font-size: 22px; font-weight: 600; margin-bottom: 8px; }
     #connect-screen p { color: #666; font-size: 14px; margin-bottom: 28px; line-height: 1.6; }
@@ -52,361 +63,454 @@
     }
     .btn-connect:hover { background: #3C3489; }
 
-    /* ── Dashboard ── */
-    #dashboard { display: none; }
-    #dashboard.visible { display: block; }
-
-    /* Store header card */
-    .store-card {
-      background: #fff;
-      border: 1px solid #e2e2da;
-      border-radius: 14px;
-      padding: 20px 24px;
-      margin-bottom: 24px;
-      display: flex; align-items: center; justify-content: space-between;
-      gap: 16px;
-    }
-    .store-avatar {
-      width: 44px; height: 44px; border-radius: 10px;
-      background: #f0eeff; display: flex; align-items: center;
-      justify-content: center; font-size: 22px; flex-shrink: 0;
-    }
-    .store-info { flex: 1; }
-    .store-name { font-size: 17px; font-weight: 600; }
-    .store-meta { font-size: 13px; color: #888; margin-top: 3px; }
     /* ── Store switcher ── */
     .store-switcher-wrap {
-      background: #fff;
-      border: 1px solid #e2e2da;
-      border-radius: 14px;
-      padding: 20px 24px;
-      margin-bottom: 24px;
-      display: flex; align-items: center; justify-content: space-between;
-      gap: 16px; flex-wrap: wrap;
+      background: #fff; border: 1px solid #e2e2da; border-radius: 14px;
+      padding: 16px 24px; margin-bottom: 20px;
+      display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
     }
     .store-switcher-left { display: flex; align-items: center; gap: 14px; flex: 1; }
-    .store-switcher-info { flex: 1; }
-    .store-switcher-name { font-size: 17px; font-weight: 600; }
-    .store-switcher-meta { font-size: 13px; color: #888; margin-top: 3px; }
+    .store-avatar {
+      width: 40px; height: 40px; border-radius: 10px; background: #f0eeff;
+      display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;
+    }
+    .store-switcher-name { font-size: 16px; font-weight: 600; }
+    .store-switcher-meta { font-size: 13px; color: #888; margin-top: 2px; }
     .store-switcher-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
     .store-select {
-      border: 1px solid #e2e2da; border-radius: 8px;
-      padding: 8px 12px; font-size: 13px; background: #fafaf7;
-      cursor: pointer; max-width: 240px;
+      border: 1px solid #e2e2da; border-radius: 8px; padding: 7px 12px;
+      font-size: 13px; background: #fafaf7; cursor: pointer; max-width: 240px;
     }
     .store-select:focus { outline: none; border-color: #534AB7; }
     .btn-add-store {
-      background: #f0eeff; color: #534AB7;
-      border: 1px solid #d4cfff; border-radius: 8px;
-      padding: 8px 16px; font-size: 13px; font-weight: 500;
-      text-decoration: none; white-space: nowrap;
-      transition: background 0.15s;
+      background: #f0eeff; color: #534AB7; border: 1px solid #d4cfff; border-radius: 8px;
+      padding: 7px 14px; font-size: 13px; font-weight: 500; text-decoration: none;
+      white-space: nowrap; transition: background 0.15s;
     }
     .btn-add-store:hover { background: #e2deff; }
     .btn-disconnect-store {
-      background: #fff0f0; color: #c62828;
-      border: 1px solid #f5c6c6; border-radius: 8px;
-      padding: 8px 16px; font-size: 13px; font-weight: 500;
-      cursor: pointer; white-space: nowrap;
-      transition: background 0.15s;
+      background: #fff0f0; color: #c62828; border: 1px solid #f5c6c6; border-radius: 8px;
+      padding: 7px 14px; font-size: 13px; font-weight: 500; cursor: pointer; white-space: nowrap;
     }
     .btn-disconnect-store:hover { background: #ffe0e0; }
 
     /* ── Section cards ── */
     .section {
-      background: #fff;
-      border: 1px solid #e2e2da;
-      border-radius: 14px;
-      margin-bottom: 20px;
-      overflow: hidden;
+      background: #fff; border: 1px solid #e2e2da; border-radius: 14px;
+      margin-bottom: 20px; overflow: hidden;
     }
     .section-header {
-      padding: 16px 22px;
-      display: flex; align-items: center; justify-content: space-between;
-      border-bottom: 1px solid #f0f0ea; gap: 12px; flex-wrap: wrap;
+      padding: 14px 20px; display: flex; align-items: center;
+      justify-content: space-between; border-bottom: 1px solid #f0f0ea; gap: 12px; flex-wrap: wrap;
     }
-    .section-title {
-      display: flex; align-items: center; gap: 10px;
-    }
+    .section-title { display: flex; align-items: center; gap: 10px; }
     .section-icon {
-      width: 32px; height: 32px; border-radius: 8px;
-      background: #f0eeff; color: #534AB7;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 15px; flex-shrink: 0;
+      width: 32px; height: 32px; border-radius: 8px; background: #f0eeff; color: #534AB7;
+      display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0;
     }
     .section-title h3 { font-size: 15px; font-weight: 600; }
     .section-title .endpoint-tag {
       font-size: 11px; color: #888; font-family: monospace;
       background: #f4f4f0; padding: 2px 7px; border-radius: 4px;
     }
-
-    /* Controls row */
-    .section-controls {
-      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-    }
+    .section-controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
     .param-group { display: flex; align-items: center; gap: 6px; }
-    .param-group label { font-size: 12px; color: #666; }
-    .param-group input {
+    .param-group label { font-size: 12px; color: #666; white-space: nowrap; }
+    .param-group input, .param-group select {
       border: 1px solid #e2e2da; border-radius: 6px;
-      padding: 5px 9px; font-size: 13px;
-      width: 80px; transition: border-color 0.15s;
+      padding: 5px 9px; font-size: 13px; transition: border-color 0.15s;
+      background: #fff;
     }
-    .param-group input[type="text"] { width: 140px; }
-    .param-group input:focus { outline: none; border-color: #534AB7; }
+    .param-group input[type="number"] { width: 72px; }
+    .param-group input[type="text"], .param-group input[type="date"] { width: 140px; }
+    .param-group select { width: 160px; }
+    .param-group input:focus, .param-group select:focus { outline: none; border-color: #534AB7; }
     .btn-fetch {
-      background: #534AB7; color: #fff; border: none;
-      border-radius: 7px; padding: 7px 18px; font-size: 13px;
-      font-weight: 600; cursor: pointer; transition: background 0.15s;
-      display: flex; align-items: center; gap: 6px;
+      background: #534AB7; color: #fff; border: none; border-radius: 7px;
+      padding: 7px 18px; font-size: 13px; font-weight: 600; cursor: pointer;
+      transition: background 0.15s; display: flex; align-items: center; gap: 6px; white-space: nowrap;
     }
     .btn-fetch:hover { background: #3C3489; }
     .btn-fetch:disabled { background: #bbb; cursor: not-allowed; }
     .btn-export {
-      background: #fff; color: #534AB7; border: 1.5px solid #534AB7;
-      border-radius: 7px; padding: 7px 16px; font-size: 13px;
-      font-weight: 600; cursor: pointer; transition: background 0.15s, color 0.15s;
-      display: flex; align-items: center; gap: 6px;
+      background: #fff; color: #534AB7; border: 1.5px solid #534AB7; border-radius: 7px;
+      padding: 7px 14px; font-size: 13px; font-weight: 600; cursor: pointer;
+      transition: background 0.15s, color 0.15s; display: flex; align-items: center; gap: 6px;
     }
     .btn-export:hover { background: #534AB7; color: #fff; }
     .btn-export:disabled { border-color: #bbb; color: #bbb; cursor: not-allowed; }
     .fetch-status { font-size: 12px; }
-    .fetch-status.ok { color: #2e7d32; }
+    .fetch-status.ok  { color: #2e7d32; }
     .fetch-status.err { color: #c62828; }
 
     /* ── Result area ── */
     .section-body { padding: 0; }
-
-    /* Table view */
     .data-table-wrap { overflow-x: auto; }
-    table {
-      width: 100%; border-collapse: collapse;
-      font-size: 13px;
-    }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
     th {
-      background: #fafaf7; padding: 10px 16px;
-      text-align: left; font-size: 11px; font-weight: 600;
-      color: #888; text-transform: uppercase; letter-spacing: 0.5px;
+      background: #fafaf7; padding: 9px 16px; text-align: left; font-size: 11px;
+      font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.5px;
       border-bottom: 1px solid #f0f0ea;
     }
-    td {
-      padding: 10px 16px; border-bottom: 1px solid #f7f7f4;
-      vertical-align: top;
-    }
+    td { padding: 10px 16px; border-bottom: 1px solid #f7f7f4; vertical-align: top; }
     tr:last-child td { border-bottom: none; }
     tr:hover td { background: #fafaf7; }
     .cell-id { font-family: monospace; font-size: 11px; color: #aaa; }
     .cell-badge {
-      display: inline-block; padding: 2px 8px; border-radius: 10px;
-      font-size: 11px; font-weight: 500;
+      display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 500;
     }
     .badge-green  { background: #e8f5e9; color: #2e7d32; }
     .badge-orange { background: #fff3e0; color: #e65100; }
     .badge-blue   { background: #e3f2fd; color: #1565c0; }
     .badge-grey   { background: #f0f0ea; color: #666; }
+    .badge-red    { background: #fce8e8; color: #c62828; }
 
-    /* Key-value card (store info) */
     .kv-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
       gap: 1px; background: #f0f0ea;
     }
-    .kv-item {
-      background: #fff; padding: 16px 20px;
-    }
-    .kv-key { font-size: 11px; color: #888; text-transform: uppercase;
-              letter-spacing: 0.5px; margin-bottom: 4px; }
+    .kv-item { background: #fff; padding: 14px 18px; }
+    .kv-key { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
     .kv-val { font-size: 14px; font-weight: 500; word-break: break-all; }
 
-    /* Order product lines */
     .order-product-line { margin-bottom: 4px; }
     .order-product-line:last-child { margin-bottom: 0; }
     .order-product-name { font-weight: 500; display: block; }
     .order-product-meta { font-size: 11px; color: #888; }
 
-    /* Empty / loading states */
-    .state-msg {
-      padding: 32px; text-align: center; color: #bbb; font-size: 13px;
-    }
+    .state-msg { padding: 32px; text-align: center; color: #bbb; font-size: 13px; }
 
-    /* Pagination row */
     .pagination-row {
       padding: 12px 20px; border-top: 1px solid #f0f0ea;
-      display: flex; align-items: center; justify-content: space-between;
-      font-size: 12px; color: #888;
+      display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: #888;
     }
-
-    /* Raw JSON toggle */
     .json-toggle {
       font-size: 11px; color: #888; background: none; border: none;
-      cursor: pointer; padding: 2px 6px; border-radius: 4px;
-      transition: background 0.1s;
+      cursor: pointer; padding: 2px 6px; border-radius: 4px; transition: background 0.1s;
     }
     .json-toggle:hover { background: #f0f0ea; color: #444; }
     pre.raw-json {
-      padding: 16px 20px; font-size: 11px; font-family: monospace;
-      line-height: 1.7; white-space: pre-wrap; word-break: break-all;
-      max-height: 360px; overflow-y: auto;
+      padding: 16px 20px; font-size: 11px; font-family: monospace; line-height: 1.7;
+      white-space: pre-wrap; word-break: break-all; max-height: 360px; overflow-y: auto;
       border-top: 1px solid #f0f0ea; display: none;
     }
     pre.raw-json.visible { display: block; }
+
+    /* ── Pill selectors (Meta Ads / First Delivery) ── */
+    .pill-row { display: flex; flex-wrap: wrap; gap: 8px; padding: 14px 20px; border-bottom: 1px solid #f0f0ea; }
+    .pill {
+      background: #f4f4f0; border: 1px solid #e2e2da; border-radius: 20px;
+      padding: 5px 14px; font-size: 12px; font-weight: 500; cursor: pointer; color: #555;
+      transition: background 0.12s, border-color 0.12s, color 0.12s;
+    }
+    .pill:hover { background: #eeeef8; border-color: #b0aae8; color: #534AB7; }
+    .pill.active { background: #f0eeff; border-color: #534AB7; color: #534AB7; }
+    .pill-label { font-size: 11px; color: #aaa; padding: 6px 4px; align-self: center; }
+
+    /* ── Colis detail card (Tictac) ── */
+    .colis-card {
+      background: #fff; border: 1px solid #e2e2da; border-radius: 12px;
+      padding: 20px 24px; margin-bottom: 16px;
+    }
+    .colis-card h4 { font-size: 14px; font-weight: 600; margin-bottom: 12px; color: #534AB7; }
+    .colis-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px;
+    }
+    .colis-field { }
+    .colis-field-key { font-size: 10px; color: #aaa; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 2px; }
+    .colis-field-val { font-size: 13px; font-weight: 500; }
   </style>
 </head>
 <body>
 
 <header>
   <div class="logo"><span>Track</span>ly</div>
+  <nav>
+    <button class="nav-tab active" id="tab-btn-converty"      onclick="showTab('converty')">🏪 Converty</button>
+    <button class="nav-tab"        id="tab-btn-firstdelivery" onclick="showTab('firstdelivery')">📦 First Delivery</button>
+    <button class="nav-tab"        id="tab-btn-tictac"        onclick="showTab('tictac')">🚚 Tictac</button>
+    <button class="nav-tab"        id="tab-btn-metaads"       onclick="showTab('metaads')">📊 Meta Ads</button>
+  </nav>
   <span id="status-badge" class="badge">Not connected</span>
 </header>
 
 <main>
 
-  <!-- ── Connect screen ── -->
-  <div id="connect-screen">
-    <div class="icon">🏪</div>
-    <h2>Connect your store</h2>
-    <p>Authorize Trackly to access your Converty store's products, orders, and more.</p>
-    <a href="/integrations/converty/connect" class="btn-connect" id="btn-connect">Connect with Converty</a>
-  </div>
+  <!-- ════════════════════════════════════════
+       TAB: CONVERTY
+  ════════════════════════════════════════ -->
+  <div class="tab-panel active" id="tab-converty">
 
-  <!-- ── Dashboard ── -->
-  <div id="dashboard">
-
-    <!-- Store switcher bar -->
-    <div class="store-switcher-wrap">
-      <div class="store-switcher-left">
-        <div class="store-avatar">🏪</div>
-        <div class="store-switcher-info">
-          <div class="store-switcher-name" id="store-name">Loading…</div>
-          <div class="store-switcher-meta" id="store-meta"></div>
-        </div>
-      </div>
-      <div class="store-switcher-right">
-        <select class="store-select" id="store-select" onchange="switchStore(this.value)" title="Switch store" style="display:none"></select>
-        <a href="/integrations/converty/connect" class="btn-add-store">+ Add store</a>
-        <button class="btn-disconnect-store" onclick="disconnectActive()">Disconnect</button>
-      </div>
+    <div id="connect-screen">
+      <div class="icon">🏪</div>
+      <h2>Connect your store</h2>
+      <p>Authorize Trackly to access your Converty store's products, orders, and more.</p>
+      <a href="/integrations/converty/connect" class="btn-connect">Connect with Converty</a>
     </div>
 
-    <!-- ── Store info section ── -->
-    <div class="section" id="sec-store">
+    <div id="converty-dashboard" style="display:none">
+
+      <div class="store-switcher-wrap">
+        <div class="store-switcher-left">
+          <div class="store-avatar">🏪</div>
+          <div>
+            <div class="store-switcher-name" id="store-name">Loading…</div>
+            <div class="store-switcher-meta" id="store-meta"></div>
+          </div>
+        </div>
+        <div class="store-switcher-right">
+          <select class="store-select" id="store-select" onchange="switchStore(this.value)" style="display:none"></select>
+          <a href="/integrations/converty/connect" class="btn-add-store">+ Add store</a>
+          <button class="btn-disconnect-store" onclick="disconnectActive()">Disconnect</button>
+        </div>
+      </div>
+
+      <!-- Store info -->
+      <div class="section">
+        <div class="section-header">
+          <div class="section-title">
+            <div class="section-icon">🏷️</div>
+            <div><h3>Store info</h3><span class="endpoint-tag">GET /stores/me</span></div>
+          </div>
+          <div class="section-controls">
+            <span class="fetch-status" id="fs-store"></span>
+            <button class="btn-fetch" id="btn-store" onclick="fetchSection('store')"><span>⟳</span> Fetch</button>
+          </div>
+        </div>
+        <div class="section-body" id="body-store"><div class="state-msg">Click Fetch to load store details.</div></div>
+        <pre class="raw-json" id="raw-store"></pre>
+      </div>
+
+      <!-- Products -->
+      <div class="section">
+        <div class="section-header">
+          <div class="section-title">
+            <div class="section-icon">📦</div>
+            <div><h3>Products</h3><span class="endpoint-tag">GET /products</span></div>
+          </div>
+          <div class="section-controls">
+            <div class="param-group"><label>Search</label><input type="text" id="p-search" placeholder="name…" /></div>
+            <div class="param-group"><label>Page</label><input type="number" id="p-page" value="1" min="1" /></div>
+            <div class="param-group"><label>Limit</label><input type="number" id="p-limit" value="10" min="1" max="200" /></div>
+            <span class="fetch-status" id="fs-products"></span>
+            <button class="btn-fetch" id="btn-products" onclick="fetchSection('products')"><span>⟳</span> Fetch</button>
+          </div>
+        </div>
+        <div class="section-body" id="body-products"><div class="state-msg">Click Fetch to load products.</div></div>
+        <pre class="raw-json" id="raw-products"></pre>
+      </div>
+
+      <!-- Orders -->
+      <div class="section">
+        <div class="section-header">
+          <div class="section-title">
+            <div class="section-icon">🛒</div>
+            <div><h3>Orders</h3><span class="endpoint-tag">GET /orders</span></div>
+          </div>
+          <div class="section-controls">
+            <div class="param-group"><label>Page</label><input type="number" id="o-page" value="1" min="1" /></div>
+            <div class="param-group"><label>Limit</label><input type="number" id="o-limit" value="10" min="1" max="200" /></div>
+            <span class="fetch-status" id="fs-orders"></span>
+            <button class="btn-export" id="btn-export-csv" onclick="exportProductsCSV()"><span>⬇</span> Export CSV</button>
+            <button class="btn-fetch" id="btn-orders" onclick="fetchSection('orders')"><span>⟳</span> Fetch</button>
+          </div>
+        </div>
+        <div class="section-body" id="body-orders"><div class="state-msg">Click Fetch to load orders.</div></div>
+        <pre class="raw-json" id="raw-orders"></pre>
+      </div>
+
+      <!-- Webhooks -->
+      <div class="section">
+        <div class="section-header">
+          <div class="section-title">
+            <div class="section-icon">🔔</div>
+            <div><h3>Webhooks</h3><span class="endpoint-tag">GET /hooks</span></div>
+          </div>
+          <div class="section-controls">
+            <span class="fetch-status" id="fs-webhooks"></span>
+            <button class="btn-fetch" id="btn-webhooks" onclick="fetchSection('webhooks')"><span>⟳</span> Fetch</button>
+          </div>
+        </div>
+        <div class="section-body" id="body-webhooks"><div class="state-msg">Click Fetch to load webhooks.</div></div>
+        <pre class="raw-json" id="raw-webhooks"></pre>
+      </div>
+
+    </div><!-- /converty-dashboard -->
+  </div><!-- /tab-converty -->
+
+
+  <!-- ════════════════════════════════════════
+       TAB: FIRST DELIVERY
+  ════════════════════════════════════════ -->
+  <div class="tab-panel" id="tab-firstdelivery">
+
+    <!-- Filtrer les commandes -->
+    <div class="section">
       <div class="section-header">
         <div class="section-title">
-          <div class="section-icon">🏷️</div>
-          <div>
-            <h3>Store info</h3>
-            <span class="endpoint-tag">GET /stores/me</span>
-          </div>
+          <div class="section-icon">🔍</div>
+          <div><h3>Filtrer les commandes</h3><span class="endpoint-tag">POST /filter</span></div>
         </div>
         <div class="section-controls">
-          <span class="fetch-status" id="fs-store"></span>
-          <button class="btn-fetch" id="btn-store" onclick="fetchSection('store')">
-            <span>⟳</span> Fetch
-          </button>
+          <span class="fetch-status" id="fs-fd-filter"></span>
+          <button class="btn-fetch" id="btn-fd-filter" onclick="fdFilter()"><span>⟳</span> Fetch</button>
         </div>
       </div>
-      <div class="section-body" id="body-store">
-        <div class="state-msg">Click Fetch to load store details.</div>
+      <div style="padding:14px 20px; border-bottom:1px solid #f0f0ea; display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end;">
+        <div class="param-group"><label>Code barre</label><input type="text" id="fd-barcode" placeholder="12 chiffres…" /></div>
+        <div class="param-group"><label>Date début</label><input type="date" id="fd-from" /></div>
+        <div class="param-group"><label>Date fin</label><input type="date" id="fd-to" /></div>
+        <div class="param-group">
+          <label>État</label>
+          <select id="fd-state">
+            <option value="">— Tous —</option>
+            <option value="0">En attente (0)</option>
+            <option value="1">En cours (1)</option>
+            <option value="2">Livré (2)</option>
+            <option value="3">Échange (3)</option>
+            <option value="5">Retour expéditeur (5)</option>
+            <option value="6">Supprimé (6)</option>
+            <option value="7">Rtn client/agence (7)</option>
+            <option value="8">Au magasin (8)</option>
+            <option value="11">Rtn dépôt (11)</option>
+            <option value="20">À vérifier (20)</option>
+            <option value="30">Retour reçu (30)</option>
+            <option value="31">Rtn définitif (31)</option>
+            <option value="100">Demande d'enlèvement (100)</option>
+            <option value="103">Enlevé (103)</option>
+          </select>
+        </div>
+        <div class="param-group"><label>Page</label><input type="number" id="fd-page" value="1" min="1" /></div>
+        <div class="param-group"><label>Limit</label><input type="number" id="fd-limit" value="10" min="1" max="100" /></div>
       </div>
-      <pre class="raw-json" id="raw-store"></pre>
+      <div class="section-body" id="body-fd-filter"><div class="state-msg">Renseignez les filtres et cliquez Fetch.</div></div>
+      <pre class="raw-json" id="raw-fd-filter"></pre>
     </div>
 
-    <!-- ── Products section ── -->
-    <div class="section" id="sec-products">
+    <!-- Consulter l'état d'une commande -->
+    <div class="section">
       <div class="section-header">
         <div class="section-title">
-          <div class="section-icon">📦</div>
-          <div>
-            <h3>Products</h3>
-            <span class="endpoint-tag">GET /products</span>
-          </div>
+          <div class="section-icon">📋</div>
+          <div><h3>Consulter l'état d'une commande</h3><span class="endpoint-tag">POST /etat</span></div>
         </div>
         <div class="section-controls">
           <div class="param-group">
-            <label>Search</label>
-            <input type="text" id="p-search" placeholder="name…" />
+            <label>Code barre</label>
+            <input type="text" id="fd-etat-barcode" placeholder="683377360858" style="width:180px" />
           </div>
-          <div class="param-group">
-            <label>Page</label>
-            <input type="number" id="p-page" value="1" min="1" />
-          </div>
-          <div class="param-group">
-            <label>Limit</label>
-            <input type="number" id="p-limit" value="10" min="1" max="200" />
-          </div>
-          <span class="fetch-status" id="fs-products"></span>
-          <button class="btn-fetch" id="btn-products" onclick="fetchSection('products')">
-            <span>⟳</span> Fetch
-          </button>
+          <span class="fetch-status" id="fs-fd-etat"></span>
+          <button class="btn-fetch" id="btn-fd-etat" onclick="fdEtat()"><span>⟳</span> Fetch</button>
         </div>
       </div>
-      <div class="section-body" id="body-products">
-        <div class="state-msg">Click Fetch to load products.</div>
-      </div>
-      <pre class="raw-json" id="raw-products"></pre>
+      <div class="section-body" id="body-fd-etat"><div class="state-msg">Entrez un code barre et cliquez Fetch.</div></div>
+      <pre class="raw-json" id="raw-fd-etat"></pre>
     </div>
 
-    <!-- ── Orders section ── -->
-    <div class="section" id="sec-orders">
+  </div><!-- /tab-firstdelivery -->
+
+
+  <!-- ════════════════════════════════════════
+       TAB: TICTAC
+  ════════════════════════════════════════ -->
+  <div class="tab-panel" id="tab-tictac">
+
+    <!-- Rechercher un colis -->
+    <div class="section">
       <div class="section-header">
         <div class="section-title">
-          <div class="section-icon">🛒</div>
-          <div>
-            <h3>Orders</h3>
-            <span class="endpoint-tag">GET /orders</span>
-          </div>
+          <div class="section-icon">🔍</div>
+          <div><h3>Rechercher un colis</h3><span class="endpoint-tag">GET live → mirrored in DB</span></div>
         </div>
         <div class="section-controls">
           <div class="param-group">
-            <label>Page</label>
-            <input type="number" id="o-page" value="1" min="1" />
+            <label>Code barre</label>
+            <input type="text" id="tt-barcode" placeholder="100149263" style="width:180px"
+                   onkeydown="if(event.key==='Enter') ttSearch()" />
           </div>
-          <div class="param-group">
-            <label>Limit</label>
-            <input type="number" id="o-limit" value="10" min="1" max="200" />
-          </div>
-          <span class="fetch-status" id="fs-orders"></span>
-          <button class="btn-export" id="btn-export-csv" onclick="exportProductsCSV()">
-            <span>⬇</span> Export CSV
-          </button>
-          <button class="btn-fetch" id="btn-orders" onclick="fetchSection('orders')">
-            <span>⟳</span> Fetch
-          </button>
+          <span class="fetch-status" id="fs-tt-search"></span>
+          <button class="btn-fetch" id="btn-tt-search" onclick="ttSearch()"><span>⟳</span> Rechercher</button>
         </div>
       </div>
-      <div class="section-body" id="body-orders">
-        <div class="state-msg">Click Fetch to load orders.</div>
-      </div>
-      <pre class="raw-json" id="raw-orders"></pre>
+      <div class="section-body" id="body-tt-search"><div class="state-msg">Entrez un code barre pour récupérer un colis depuis l'API Tictac.</div></div>
+      <pre class="raw-json" id="raw-tt-search"></pre>
     </div>
 
-    <!-- ── Webhooks section ── -->
-    <div class="section" id="sec-webhooks">
+    <!-- Colis miroir (local DB) -->
+    <div class="section">
       <div class="section-header">
         <div class="section-title">
-          <div class="section-icon">🔔</div>
-          <div>
-            <h3>Webhooks</h3>
-            <span class="endpoint-tag">GET /hooks</span>
-          </div>
+          <div class="section-icon">🗄️</div>
+          <div><h3>Colis miroir (base locale)</h3><span class="endpoint-tag">Local DB</span></div>
         </div>
         <div class="section-controls">
-          <span class="fetch-status" id="fs-webhooks"></span>
-          <button class="btn-fetch" id="btn-webhooks" onclick="fetchSection('webhooks')">
-            <span>⟳</span> Fetch
-          </button>
+          <span class="fetch-status" id="fs-tt-mirror"></span>
+          <button class="btn-fetch" id="btn-tt-mirror" onclick="ttLoadMirror()"><span>⟳</span> Charger</button>
         </div>
       </div>
-      <div class="section-body" id="body-webhooks">
-        <div class="state-msg">Click Fetch to load webhooks.</div>
-      </div>
-      <pre class="raw-json" id="raw-webhooks"></pre>
+      <div class="section-body" id="body-tt-mirror"><div class="state-msg">Cliquez Charger pour afficher les colis enregistrés localement.</div></div>
     </div>
 
-  </div><!-- /dashboard -->
+  </div><!-- /tab-tictac -->
+
+
+  <!-- ════════════════════════════════════════
+       TAB: META ADS
+  ════════════════════════════════════════ -->
+  <div class="tab-panel" id="tab-metaads">
+
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title">
+          <div class="section-icon">📊</div>
+          <div><h3>Meta Ads Explorer</h3><span class="endpoint-tag">Marketing API v19.0 · Read-only</span></div>
+        </div>
+        <div class="section-controls">
+          <span class="fetch-status" id="fs-meta"></span>
+          <button class="btn-fetch" id="btn-meta" onclick="metaFetch()"><span>⟳</span> Fetch</button>
+        </div>
+      </div>
+
+      <!-- Account pills -->
+      <div style="padding:10px 20px 0; border-bottom:1px solid #f0f0ea;">
+        <div style="font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Ad Account</div>
+        <div class="pill-row" id="meta-accounts" style="padding:0 0 12px"></div>
+      </div>
+
+      <!-- Endpoint pills -->
+      <div style="padding:10px 20px 0; border-bottom:1px solid #f0f0ea;">
+        <div style="font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Endpoint</div>
+        <div class="pill-row" id="meta-endpoints" style="padding:0 0 12px"></div>
+      </div>
+
+      <!-- Fields input -->
+      <div style="padding:12px 20px; border-bottom:1px solid #f0f0ea; display:flex; align-items:center; gap:10px;">
+        <label style="font-size:12px;color:#666;white-space:nowrap">Fields</label>
+        <input type="text" id="meta-fields" style="flex:1;border:1px solid #e2e2da;border-radius:6px;padding:6px 10px;font-size:13px;font-family:monospace" />
+      </div>
+
+      <div class="section-body" id="body-meta"><div class="state-msg">Sélectionnez un compte et un endpoint, puis cliquez Fetch.</div></div>
+      <pre class="raw-json" id="raw-meta"></pre>
+    </div>
+
+  </div><!-- /tab-metaads -->
+
 </main>
 
 <script>
-// ── Init ────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════
+// TAB NAVIGATION
+// ══════════════════════════════════════════════════════════════════
+function showTab(name) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  document.getElementById('tab-btn-' + name).classList.add('active');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// CONVERTY
+// ══════════════════════════════════════════════════════════════════
 let _storeState = { stores: [], activeStoreId: null };
 
 async function init() {
@@ -415,31 +519,27 @@ async function init() {
     const data = await res.json();
     if (data.connected && data.stores.length > 0) {
       _storeState = data;
-      showDashboard();
+      showConvertyDashboard();
       populateStoreSwitcher(data.stores, data.activeStoreId);
       fetchSection('store');
     }
-  } catch (e) {
-    console.error('Status check failed', e);
-  }
+  } catch (e) { console.error('Status check failed', e); }
 }
 
-function showDashboard() {
+function showConvertyDashboard() {
   document.getElementById('connect-screen').style.display = 'none';
-  document.getElementById('dashboard').style.display = 'block';
+  document.getElementById('converty-dashboard').style.display = 'block';
   const badge = document.getElementById('status-badge');
   badge.textContent = 'Connected';
   badge.classList.add('connected');
 }
 
-// ── Store switcher ───────────────────────────────────────────────
 function populateStoreSwitcher(stores, activeStoreId) {
   const sel = document.getElementById('store-select');
   sel.innerHTML = stores.map(s =>
     `<option value="${esc(s.id)}" ${s.id === activeStoreId ? 'selected' : ''}>${esc(s.name)}${s.domain ? ' — ' + esc(s.domain) : ''}</option>`
   ).join('');
   sel.style.display = stores.length > 1 ? 'block' : 'none';
-
   const active = stores.find(s => s.id === activeStoreId) || stores[0];
   if (active) {
     document.getElementById('store-name').textContent = active.name;
@@ -453,13 +553,11 @@ async function switchStore(storeId) {
     const res  = await fetch(`/integrations/converty/stores/${encodeURIComponent(storeId)}/activate`);
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Activate failed');
-
     _storeState.activeStoreId = storeId;
     populateStoreSwitcher(_storeState.stores, storeId);
-
-    ['store', 'products', 'orders', 'webhooks'].forEach(sec => {
-      const body = document.getElementById('body-' + sec);
-      if (body) body.innerHTML = '<div class="state-msg">Store switched — click Fetch to reload.</div>';
+    ['store','products','orders','webhooks'].forEach(s => {
+      const b = document.getElementById('body-' + s);
+      if (b) b.innerHTML = '<div class="state-msg">Store switched — click Fetch to reload.</div>';
     });
     fetchSection('store');
   } catch (e) {
@@ -472,12 +570,10 @@ function disconnectActive() {
   const storeId = _storeState.activeStoreId;
   if (!storeId) return;
   const store = _storeState.stores.find(s => s.id === storeId);
-  const name  = store ? store.name : storeId;
-  if (!confirm(`Disconnect "${name}"?`)) return;
+  if (!confirm(`Disconnect "${store ? store.name : storeId}"?`)) return;
   window.location.href = `/integrations/converty/stores/${encodeURIComponent(storeId)}/disconnect`;
 }
 
-// ── Generic fetch for any section ───────────────────────────────
 async function fetchSection(section) {
   const btn    = document.getElementById('btn-' + section);
   const status = document.getElementById('fs-' + section);
@@ -486,40 +582,30 @@ async function fetchSection(section) {
 
   btn.disabled = true;
   btn.innerHTML = '<span>⏳</span> Loading…';
-  status.textContent = '';
-  status.className = 'fetch-status';
+  status.textContent = ''; status.className = 'fetch-status';
   body.innerHTML = '<div class="state-msg">Fetching…</div>';
   if (raw) { raw.textContent = ''; raw.classList.remove('visible'); }
 
   try {
-    const url  = buildUrl(section);
+    const url  = buildConvertyUrl(section);
     const res  = await fetch(url);
     const data = await res.json();
-
-    if (raw) {
-      raw.textContent = JSON.stringify(data, null, 2);
-    }
-
+    if (raw) raw.textContent = JSON.stringify(data, null, 2);
     if (!res.ok) {
-      status.textContent = '✗ ' + res.status;
-      status.className = 'fetch-status err';
+      status.textContent = '✗ ' + res.status; status.className = 'fetch-status err';
       body.innerHTML = `<div class="state-msg" style="color:#c62828">${data.error || 'Request failed'}</div>`;
     } else {
-      status.textContent = '✓ OK';
-      status.className = 'fetch-status ok';
-      render(section, data, body, raw);
+      status.textContent = '✓ OK'; status.className = 'fetch-status ok';
+      renderConverty(section, data, body, raw);
     }
   } catch (e) {
-    status.textContent = '✗ Network error';
-    status.className = 'fetch-status err';
+    status.textContent = '✗ Network error'; status.className = 'fetch-status err';
     body.innerHTML = `<div class="state-msg" style="color:#c62828">${e.message}</div>`;
   }
-
-  btn.disabled = false;
-  btn.innerHTML = '<span>⟳</span> Fetch';
+  btn.disabled = false; btn.innerHTML = '<span>⟳</span> Fetch';
 }
 
-function buildUrl(section) {
+function buildConvertyUrl(section) {
   switch (section) {
     case 'store':    return '/api/converty/store';
     case 'webhooks': return '/api/converty/webhooks';
@@ -529,19 +615,18 @@ function buildUrl(section) {
       p.set('limit', document.getElementById('p-limit').value || 10);
       const s = document.getElementById('p-search').value.trim();
       if (s) p.set('search', s);
-      return '/api/converty/products?' + p.toString();
+      return '/api/converty/products?' + p;
     }
     case 'orders': {
       const p = new URLSearchParams();
       p.set('page',  document.getElementById('o-page').value  || 1);
       p.set('limit', document.getElementById('o-limit').value || 10);
-      return '/api/converty/orders?' + p.toString();
+      return '/api/converty/orders?' + p;
     }
   }
 }
 
-// ── Renderers ────────────────────────────────────────────────────
-function render(section, data, body, raw) {
+function renderConverty(section, data, body, raw) {
   switch (section) {
     case 'store':    renderStore(data, body);    break;
     case 'products': renderProducts(data, body, raw); break;
@@ -550,193 +635,546 @@ function render(section, data, body, raw) {
   }
 }
 
-// Store info → key-value grid
 function renderStore(data, body) {
   const d = data.data || data;
   if (!d) { body.innerHTML = '<div class="state-msg">No data returned.</div>'; return; }
-
-  // Flatten nested objects to a display string
   function flat(v) {
     if (v == null) return null;
     if (typeof v !== 'object') return String(v);
     return v.name || v.code || v.label || v.symbol || v.value || JSON.stringify(v);
   }
-
   const fields = [
-    ['Name',     d.name],
-    ['Domain',   d.domain],
-    ['Currency', flat(d.currency)],
-    ['Country',  flat(d.country)],
-    ['Email',    d.email],
-    ['Phone',    d.phone],
-    ['Plan',     d.plan || d.subscription],
-    ['Status',   d.status],
-    ['ID',       d._id || d.id],
-    ['Created',  d.createdAt ? new Date(d.createdAt).toLocaleDateString() : null],
+    ['Name', d.name], ['Domain', d.domain], ['Currency', flat(d.currency)],
+    ['Country', flat(d.country)], ['Email', d.email], ['Phone', d.phone],
+    ['Plan', d.plan || d.subscription], ['Status', d.status],
+    ['ID', d._id || d.id],
+    ['Created', d.createdAt ? new Date(d.createdAt).toLocaleDateString() : null],
   ].filter(([, v]) => v != null);
-
-  if (!fields.length) {
-    // fallback: just show all keys
-    for (const [k, v] of Object.entries(d)) {
-      if (typeof v !== 'object') fields.push([k, v]);
-    }
-  }
-
-  body.innerHTML = `<div class="kv-grid">${
-    fields.map(([k, v]) => `
-      <div class="kv-item">
-        <div class="kv-key">${esc(k)}</div>
-        <div class="kv-val">${esc(String(v))}</div>
-      </div>`).join('')
-  }</div>`;
+  if (!fields.length) for (const [k,v] of Object.entries(d)) if (typeof v !== 'object') fields.push([k,v]);
+  body.innerHTML = `<div class="kv-grid">${fields.map(([k,v]) =>
+    `<div class="kv-item"><div class="kv-key">${esc(k)}</div><div class="kv-val">${esc(String(v))}</div></div>`
+  ).join('')}</div>`;
 }
 
-// Products → table
 function renderProducts(data, body, raw) {
   const items = data.data || data.products || (Array.isArray(data) ? data : []);
   const total = data.count ?? data.total ?? items.length;
-
-  if (!items.length) {
-    body.innerHTML = '<div class="state-msg">No products found.</div>'; return;
-  }
-
-  const rows = items.map(p => `
-    <tr>
-      <td><span class="cell-id">${esc(p._id || p.id || '')}</span></td>
-      <td><strong>${esc(p.name || p.title || '—')}</strong></td>
-      <td>${formatTotal(p.price, 'TND')}</td>
-      <td>${formatTotal(p.delivery ?? p.deliveryCost ?? p.shippingCost ?? p.deliveryPrice, 'TND')}</td>
-      <td>${p.stock != null ? p.stock : (p.quantity != null ? p.quantity : (p.inventory != null ? p.inventory : '—'))}</td>
-      <td><span class="cell-badge ${statusBadge(p.status)}">${esc(p.status || '—')}</span></td>
-      <td>${p.adsLink || p.adLink || p.ads_link || p.link ? `<a href="${esc(p.adsLink || p.adLink || p.ads_link || p.link)}" target="_blank" style="font-size:11px;color:#534AB7">View</a>` : '—'}</td>
-    </tr>`).join('');
-
-  body.innerHTML = `
-    <div class="data-table-wrap">
-      <table>
-        <thead><tr>
-          <th>ID</th><th>Name</th><th>Price</th>
-          <th>Delivery</th><th>Stock</th><th>Status</th><th>Ads Link</th>
-        </tr></thead>
-        <tbody>${rows}</tbody>
-      </table>
-    </div>`;
-
+  if (!items.length) { body.innerHTML = '<div class="state-msg">No products found.</div>'; return; }
+  const rows = items.map(p => `<tr>
+    <td><span class="cell-id">${esc(p._id || p.id || '')}</span></td>
+    <td><strong>${esc(p.name || p.title || '—')}</strong></td>
+    <td>${formatTotal(p.price, 'TND')}</td>
+    <td>${formatTotal(p.delivery ?? p.deliveryCost ?? p.shippingCost ?? p.deliveryPrice, 'TND')}</td>
+    <td>${p.stock != null ? p.stock : (p.quantity != null ? p.quantity : '—')}</td>
+    <td><span class="cell-badge ${statusBadge(p.status)}">${esc(p.status || '—')}</span></td>
+    <td>${p.adsLink || p.adLink || p.link ? `<a href="${esc(p.adsLink||p.adLink||p.link)}" target="_blank" style="font-size:11px;color:#534AB7">View</a>` : '—'}</td>
+  </tr>`).join('');
+  body.innerHTML = `<div class="data-table-wrap"><table>
+    <thead><tr><th>ID</th><th>Name</th><th>Price</th><th>Delivery</th><th>Stock</th><th>Status</th><th>Ads</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table></div>`;
   appendPagination(body, total, items.length, raw, 'products');
 }
 
-// Orders → table
 function renderOrders(data, body, raw) {
   const items = data.data || data.orders || (Array.isArray(data) ? data : []);
-  const totalCount = data.count ?? data.total ?? items.length;
-
-  if (!items.length) {
-    body.innerHTML = '<div class="state-msg">No orders found.</div>'; return;
-  }
-
+  const total = data.count ?? data.total ?? items.length;
+  if (!items.length) { body.innerHTML = '<div class="state-msg">No orders found.</div>'; return; }
   const rows = items.map(o => {
     const cur = o.currencyCode || 'TND';
     const t   = o.total || {};
-
-    // Cart items → product lines
     const cart = Array.isArray(o.cart) ? o.cart : [];
     const productLines = cart.map(item => {
       const name = item.product?.name || '—';
-      const qty  = item.quantity || 1;
-      const unit = item.pricePerUnit ?? item.product?.price ?? 0;
       return `<div class="order-product-line">
         <span class="order-product-name">${esc(name)}</span>
-        <span class="order-product-meta">× ${qty} &nbsp;·&nbsp; ${formatTotal(unit, cur)}</span>
+        <span class="order-product-meta">× ${item.quantity||1} · ${formatTotal(item.pricePerUnit ?? item.product?.price, cur)}</span>
       </div>`;
     }).join('') || '<span style="color:#bbb">—</span>';
-
-    // Delivery charged to customer
     const delivCharged = t.deliveryPrice ?? 0;
     const delivBadge = delivCharged === 0
       ? '<span class="cell-badge badge-green">Free</span>'
       : `<span class="cell-badge badge-orange">${formatTotal(delivCharged, cur)}</span>`;
-
-    // Delivery cost borne by merchant
     const delivCost = t.deliveryCost ?? 0;
-    const delivCostStr = delivCost > 0 ? formatTotal(delivCost, cur) : '<span style="color:#bbb">—</span>';
-
-    // Customer info
-    const custName  = o.customer?.name  || '—';
-    const custPhone = o.customer?.phone || '';
-    const custCity  = o.customer?.city  || '';
     const returning = o.customer?.hasOtherOrders
-      ? '<span class="cell-badge badge-blue" title="Returning customer">↩ returning</span>' : '';
-
-    const dupFlag = o.duplicated
-      ? '<span class="cell-badge badge-orange" style="margin-left:4px">dup</span>' : '';
-
+      ? '<span class="cell-badge badge-blue" style="margin-top:2px">↩ returning</span>' : '';
+    const dupFlag = o.duplicated ? '<span class="cell-badge badge-orange" style="margin-left:4px">dup</span>' : '';
     return `<tr>
-      <td><strong>#${esc(String(o.reference || '—'))}</strong>${dupFlag}</td>
+      <td><strong>#${esc(String(o.reference||'—'))}</strong>${dupFlag}</td>
       <td>${productLines}</td>
       <td>
-        <div style="font-weight:500">${esc(custName)}</div>
-        <div style="font-size:11px;color:#888">${esc(custPhone)}${custCity ? ' · ' + esc(custCity) : ''}</div>
+        <div style="font-weight:500">${esc(o.customer?.name||'—')}</div>
+        <div style="font-size:11px;color:#888">${esc(o.customer?.phone||'')}${o.customer?.city ? ' · '+esc(o.customer.city) : ''}</div>
         ${returning}
       </td>
       <td>${formatTotal(t.totalPrice ?? t.basePrice, cur)}</td>
       <td>${delivBadge}</td>
-      <td>${delivCostStr}</td>
-      <td><span class="cell-badge ${statusBadge(o.status)}">${esc(o.status || '—')}</span></td>
+      <td>${delivCost > 0 ? formatTotal(delivCost, cur) : '<span style="color:#bbb">—</span>'}</td>
+      <td><span class="cell-badge ${statusBadge(o.status)}">${esc(o.status||'—')}</span></td>
       <td style="white-space:nowrap">${o.createdAt ? new Date(o.createdAt).toLocaleDateString() : '—'}</td>
     </tr>`;
   }).join('');
-
-  body.innerHTML = `
-    <div class="data-table-wrap">
-      <table>
-        <thead><tr>
-          <th>Order #</th><th>Product</th><th>Customer</th>
-          <th>Total</th><th>Delivery (customer)</th><th>Delivery cost</th>
-          <th>Status</th><th>Date</th>
-        </tr></thead>
-        <tbody>${rows}</tbody>
-      </table>
-    </div>`;
-
-  appendPagination(body, totalCount, items.length, raw, 'orders');
+  body.innerHTML = `<div class="data-table-wrap"><table>
+    <thead><tr><th>Order #</th><th>Product</th><th>Customer</th><th>Total</th><th>Delivery</th><th>Deliv. cost</th><th>Status</th><th>Date</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table></div>`;
+  appendPagination(body, total, items.length, raw, 'orders');
 }
 
-// Webhooks → table
 function renderWebhooks(data, body, raw) {
   const items = data.data || data.hooks || data.webhooks || (Array.isArray(data) ? data : []);
-
-  if (!items.length) {
-    body.innerHTML = '<div class="state-msg">No webhooks registered.</div>'; return;
-  }
-
-  const rows = items.map(h => `
-    <tr>
-      <td><span class="cell-id">${esc(h._id || h.id || '')}</span></td>
-      <td><code style="font-size:11px">${esc(h.event || h.topic || '—')}</code></td>
-      <td style="font-size:12px; word-break:break-all">${esc(h.url || h.endpoint || '—')}</td>
-      <td><span class="cell-badge ${h.active === false ? 'badge-grey' : 'badge-green'}">${h.active === false ? 'inactive' : 'active'}</span></td>
-    </tr>`).join('');
-
-  body.innerHTML = `
-    <div class="data-table-wrap">
-      <table>
-        <thead><tr>
-          <th>ID</th><th>Event</th><th>URL</th><th>Status</th>
-        </tr></thead>
-        <tbody>${rows}</tbody>
-      </table>
-    </div>`;
-
+  if (!items.length) { body.innerHTML = '<div class="state-msg">No webhooks registered.</div>'; return; }
+  const rows = items.map(h => `<tr>
+    <td><span class="cell-id">${esc(h._id||h.id||'')}</span></td>
+    <td><code style="font-size:11px">${esc(h.event||h.topic||'—')}</code></td>
+    <td style="font-size:12px;word-break:break-all">${esc(h.url||h.endpoint||'—')}</td>
+    <td><span class="cell-badge ${h.active===false?'badge-grey':'badge-green'}">${h.active===false?'inactive':'active'}</span></td>
+  </tr>`).join('');
+  body.innerHTML = `<div class="data-table-wrap"><table>
+    <thead><tr><th>ID</th><th>Event</th><th>URL</th><th>Status</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table></div>`;
   appendPagination(body, items.length, items.length, raw, 'webhooks');
 }
 
-// ── Pagination footer + raw JSON toggle ──────────────────────────
+async function exportProductsCSV() {
+  const btn = document.getElementById('btn-export-csv');
+  btn.disabled = true; btn.innerHTML = '<span>⏳</span> Exporting…';
+  try {
+    const res = await fetch('/api/converty/export/products-csv');
+    if (!res.ok) { const e = await res.json().catch(()=>({})); alert('Export failed: '+(e.error||res.statusText)); return; }
+    const blob = await res.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    const cd   = res.headers.get('Content-Disposition') || '';
+    const m    = cd.match(/filename="?([^"]+)"?/);
+    a.download = m ? m[1] : 'products-sales.csv';
+    a.href = url; a.style.display = 'none';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch (e) { alert('Export error: ' + e.message); }
+  finally { btn.disabled = false; btn.innerHTML = '<span>⬇</span> Export CSV'; }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// FIRST DELIVERY
+// ══════════════════════════════════════════════════════════════════
+async function fdFilter() {
+  const btn    = document.getElementById('btn-fd-filter');
+  const status = document.getElementById('fs-fd-filter');
+  const body   = document.getElementById('body-fd-filter');
+  const raw    = document.getElementById('raw-fd-filter');
+
+  btn.disabled = true; btn.innerHTML = '<span>⏳</span> Loading…';
+  status.textContent = ''; status.className = 'fetch-status';
+  body.innerHTML = '<div class="state-msg">Fetching…</div>';
+  raw.textContent = ''; raw.classList.remove('visible');
+
+  const p = new URLSearchParams();
+  const barCode = document.getElementById('fd-barcode').value.trim();
+  const from    = document.getElementById('fd-from').value;
+  const to      = document.getElementById('fd-to').value;
+  const state   = document.getElementById('fd-state').value;
+  const page    = document.getElementById('fd-page').value || 1;
+  const limit   = document.getElementById('fd-limit').value || 10;
+  if (barCode) p.set('barCode', barCode);
+  if (from)    p.set('createdAtFrom', from);
+  if (to)      p.set('createdAtTo', to);
+  if (state !== '') p.set('state', state);
+  p.set('pageNumber', page);
+  p.set('limit', limit);
+
+  try {
+    const res  = await fetch('/api/firstdelivery/filter?' + p);
+    const data = await res.json();
+    raw.textContent = JSON.stringify(data, null, 2);
+    if (!res.ok) {
+      status.textContent = '✗ ' + res.status; status.className = 'fetch-status err';
+      body.innerHTML = `<div class="state-msg" style="color:#c62828">${data.error||'Erreur'}</div>`;
+    } else {
+      status.textContent = '✓ OK'; status.className = 'fetch-status ok';
+      renderFdFilter(data, body, raw);
+    }
+  } catch (e) {
+    status.textContent = '✗ Network error'; status.className = 'fetch-status err';
+    body.innerHTML = `<div class="state-msg" style="color:#c62828">${e.message}</div>`;
+  }
+  btn.disabled = false; btn.innerHTML = '<span>⟳</span> Fetch';
+}
+
+function renderFdFilter(data, body, raw) {
+  // API returns { result: [...], pagination: {...} } or { data: [...] }
+  const items = data.result || data.data || (Array.isArray(data) ? data : []);
+  const total = data.pagination?.total ?? data.total ?? items.length;
+
+  if (!items.length) {
+    body.innerHTML = '<div class="state-msg">Aucune commande trouvée.</div>';
+    appendPagination(body, 0, 0, raw, 'fd-filter');
+    return;
+  }
+
+  const STATE_LABELS = {
+    0:'En attente',1:'En cours',2:'Livré',3:'Échange',5:'Retour expéditeur',
+    6:'Supprimé',7:'Rtn client/agence',8:'Au magasin',11:'Rtn dépôt',
+    20:'À vérifier',30:'Retour reçu',31:'Rtn définitif',
+    100:'Demande enlèvement',101:'Enlèvement assigné',102:'En cours enlèvement',
+    103:'Enlevé',104:'Enlèvement annulé',201:'Retour assigné',
+    202:'Retour en expédition',203:'Retour enlevé',204:'Retour annulé',
+  };
+
+  const rows = items.map(o => {
+    const cl = o.Client || o.client || {};
+    const pr = o.Product || o.product || {};
+    const stateCode = o.state ?? o.status;
+    const stateLabel = STATE_LABELS[stateCode] ?? String(stateCode ?? '—');
+    const stateClass = stateCode === 2 ? 'badge-green' : stateCode === 0 ? 'badge-orange' : stateCode >= 5 ? 'badge-red' : 'badge-blue';
+    return `<tr>
+      <td><span class="cell-id">${esc(o.barCode||o.code_barre||'—')}</span></td>
+      <td>
+        <div style="font-weight:500">${esc(cl.name||cl.nom||'—')}</div>
+        <div style="font-size:11px;color:#888">${esc(cl.telephone||'')}${cl.city||cl.ville ? ' · '+esc(cl.city||cl.ville) : ''}</div>
+      </td>
+      <td>${esc(pr.designation||pr.libelle||pr.name||'—')}</td>
+      <td style="white-space:nowrap">${o.createdAt ? new Date(o.createdAt).toLocaleDateString() : '—'}</td>
+      <td><span class="cell-badge ${stateClass}">${esc(stateLabel)}</span></td>
+      <td>${pr.prix != null ? pr.prix+' TND' : (o.cod != null ? o.cod+' TND' : '—')}</td>
+    </tr>`;
+  }).join('');
+
+  body.innerHTML = `<div class="data-table-wrap"><table>
+    <thead><tr><th>Code barre</th><th>Client</th><th>Produit</th><th>Date</th><th>État</th><th>Prix</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table></div>`;
+  appendPagination(body, total, items.length, raw, 'fd-filter');
+}
+
+async function fdEtat() {
+  const barCode = document.getElementById('fd-etat-barcode').value.trim();
+  const btn     = document.getElementById('btn-fd-etat');
+  const status  = document.getElementById('fs-fd-etat');
+  const body    = document.getElementById('body-fd-etat');
+  const raw     = document.getElementById('raw-fd-etat');
+
+  if (!barCode) { alert('Entrez un code barre.'); return; }
+  btn.disabled = true; btn.innerHTML = '<span>⏳</span> Loading…';
+  status.textContent = ''; status.className = 'fetch-status';
+  body.innerHTML = '<div class="state-msg">Fetching…</div>';
+  raw.textContent = ''; raw.classList.remove('visible');
+
+  try {
+    const res  = await fetch(`/api/firstdelivery/etat?barCode=${encodeURIComponent(barCode)}`);
+    const data = await res.json();
+    raw.textContent = JSON.stringify(data, null, 2);
+    if (!res.ok) {
+      status.textContent = '✗ ' + res.status; status.className = 'fetch-status err';
+      body.innerHTML = `<div class="state-msg" style="color:#c62828">${data.error||'Erreur'}</div>`;
+    } else {
+      status.textContent = '✓ OK'; status.className = 'fetch-status ok';
+      renderFdEtat(data, body, raw);
+    }
+  } catch (e) {
+    status.textContent = '✗ Network error'; status.className = 'fetch-status err';
+    body.innerHTML = `<div class="state-msg" style="color:#c62828">${e.message}</div>`;
+  }
+  btn.disabled = false; btn.innerHTML = '<span>⟳</span> Fetch';
+}
+
+function renderFdEtat(data, body, raw) {
+  const d = data.result || data.data || data;
+  if (!d || typeof d !== 'object') {
+    body.innerHTML = '<div class="state-msg">Aucune donnée retournée.</div>';
+    appendPagination(body, 0, 0, raw, 'fd-etat');
+    return;
+  }
+
+  // Flatten common fields
+  const entries = [];
+  function add(label, val) { if (val != null && val !== '') entries.push([label, val]); }
+  add('Code barre',  d.barCode || d.code_barre);
+  add('État',        d.state ?? d.status);
+  add('Créé le',     d.createdAt ? new Date(d.createdAt).toLocaleString() : null);
+  add('Enlevé le',   d.pickupAt  ? new Date(d.pickupAt).toLocaleString()  : null);
+  add('Livré le',    d.deliveredAt ? new Date(d.deliveredAt).toLocaleString() : null);
+  const cl = d.Client || d.client || {};
+  add('Client',      cl.name || cl.nom);
+  add('Téléphone',   cl.telephone);
+  add('Ville',       cl.city || cl.ville);
+  add('Gouvernorat', cl.state || cl.gouvernorat);
+  add('Adresse',     cl.address || cl.adresse);
+  const pr = d.Product || d.product || {};
+  add('Produit',     pr.designation || pr.libelle || pr.name);
+  add('Prix',        pr.prix != null ? pr.prix + ' TND' : null);
+
+  // Fallback: show all top-level scalars
+  if (!entries.length) {
+    for (const [k,v] of Object.entries(d)) if (typeof v !== 'object' && v != null) entries.push([k, v]);
+  }
+
+  body.innerHTML = `<div class="kv-grid">${entries.map(([k,v]) =>
+    `<div class="kv-item"><div class="kv-key">${esc(String(k))}</div><div class="kv-val">${esc(String(v))}</div></div>`
+  ).join('')}</div>`;
+  appendPagination(body, 1, 1, raw, 'fd-etat');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// TICTAC
+// ══════════════════════════════════════════════════════════════════
+async function ttSearch() {
+  const barCode = document.getElementById('tt-barcode').value.trim();
+  const btn     = document.getElementById('btn-tt-search');
+  const status  = document.getElementById('fs-tt-search');
+  const body    = document.getElementById('body-tt-search');
+  const raw     = document.getElementById('raw-tt-search');
+
+  if (!barCode) { alert('Entrez un code barre.'); return; }
+  btn.disabled = true; btn.innerHTML = '<span>⏳</span> Loading…';
+  status.textContent = ''; status.className = 'fetch-status';
+  body.innerHTML = '<div class="state-msg">Fetching…</div>';
+  raw.textContent = ''; raw.classList.remove('visible');
+
+  try {
+    const res  = await fetch(`/api/tictac/colis/${encodeURIComponent(barCode)}`);
+    const data = await res.json();
+    raw.textContent = JSON.stringify(data, null, 2);
+    if (!res.ok) {
+      status.textContent = '✗ ' + res.status; status.className = 'fetch-status err';
+      body.innerHTML = `<div class="state-msg" style="color:#c62828">${data.error||'Erreur'}</div>`;
+    } else {
+      status.textContent = '✓ OK · mirrored in DB'; status.className = 'fetch-status ok';
+      renderTtColis(data, body, raw);
+    }
+  } catch (e) {
+    status.textContent = '✗ Network error'; status.className = 'fetch-status err';
+    body.innerHTML = `<div class="state-msg" style="color:#c62828">${e.message}</div>`;
+  }
+  btn.disabled = false; btn.innerHTML = '<span>⟳</span> Rechercher';
+}
+
+function renderTtColis(data, body, raw) {
+  const d = data;
+  const fields = [
+    ['Code barre',   d.code_barre],
+    ['Libellé',      d.libelle],
+    ['Client',       d.nom_prenom_cl],
+    ['Téléphone',    d.tel_cl],
+    ['Téléphone 2',  d.tel_2_cl],
+    ['Ville',        d.ville_cl],
+    ['Délégation',   d.delegation_cl],
+    ['Adresse',      d.adresse_cl],
+    ['COD',          d.cod != null ? d.cod + ' TND' : null],
+    ['Nb pièces',    d.nb_piece],
+    ['Remarque',     d.remarque],
+    ['Service',      d.service],
+  ].filter(([,v]) => v != null && v !== '' && v !== '0');
+
+  if (!fields.length) {
+    // fallback: show all scalar fields
+    for (const [k,v] of Object.entries(d)) if (typeof v !== 'object' && v != null) fields.push([k,v]);
+  }
+
+  body.innerHTML = `<div class="kv-grid">${fields.map(([k,v]) =>
+    `<div class="kv-item"><div class="kv-key">${esc(String(k))}</div><div class="kv-val">${esc(String(v))}</div></div>`
+  ).join('')}</div>`;
+  appendPagination(body, 1, 1, raw, 'tt-search');
+}
+
+async function ttLoadMirror() {
+  const btn    = document.getElementById('btn-tt-mirror');
+  const status = document.getElementById('fs-tt-mirror');
+  const body   = document.getElementById('body-tt-mirror');
+
+  btn.disabled = true; btn.innerHTML = '<span>⏳</span> Loading…';
+  status.textContent = ''; status.className = 'fetch-status';
+  body.innerHTML = '<div class="state-msg">Fetching…</div>';
+
+  try {
+    const res  = await fetch('/api/tictac/colis');
+    const data = await res.json();
+    if (!res.ok) {
+      status.textContent = '✗ ' + res.status; status.className = 'fetch-status err';
+      body.innerHTML = `<div class="state-msg" style="color:#c62828">${data.error||'Erreur'}</div>`;
+    } else {
+      status.textContent = `✓ ${data.count} colis`; status.className = 'fetch-status ok';
+      renderTtMirror(data.data, body);
+    }
+  } catch (e) {
+    status.textContent = '✗ Network error'; status.className = 'fetch-status err';
+    body.innerHTML = `<div class="state-msg" style="color:#c62828">${e.message}</div>`;
+  }
+  btn.disabled = false; btn.innerHTML = '<span>⟳</span> Charger';
+}
+
+function renderTtMirror(items, body) {
+  if (!items || !items.length) {
+    body.innerHTML = '<div class="state-msg">Aucun colis en base locale. Utilisez la recherche ci-dessus.</div>'; return;
+  }
+  const rows = items.map(c => `<tr>
+    <td><span class="cell-id">${esc(c.code_barre||'—')}</span></td>
+    <td>${esc(c.nom_prenom_cl||'—')}</td>
+    <td>${esc(c.tel_cl||'')}</td>
+    <td>${esc(c.ville_cl||'—')}${c.delegation_cl ? ' / '+esc(c.delegation_cl) : ''}</td>
+    <td>${esc(c.libelle||'—')}</td>
+    <td>${c.cod != null ? c.cod+' TND' : '—'}</td>
+    <td>${esc(c.nb_piece||'—')}</td>
+    <td style="white-space:nowrap">${c.synced_at ? new Date(c.synced_at).toLocaleDateString() : '—'}</td>
+  </tr>`).join('');
+  body.innerHTML = `<div class="data-table-wrap"><table>
+    <thead><tr><th>Code barre</th><th>Client</th><th>Téléphone</th><th>Ville</th><th>Libellé</th><th>COD</th><th>Pièces</th><th>Synced</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table></div>`;
+}
+
+// ══════════════════════════════════════════════════════════════════
+// META ADS
+// ══════════════════════════════════════════════════════════════════
+let _metaAccounts  = [];
+let _metaEndpoints = [];
+let _metaSelAcc    = null;
+let _metaSelEp     = null;
+
+async function metaInit() {
+  try {
+    const res  = await fetch('/api/meta/accounts');
+    const data = await res.json();
+    _metaAccounts  = data.accounts  || [];
+    _metaEndpoints = data.endpoints || [];
+    renderMetaPills();
+  } catch (e) { console.error('Meta init failed', e); }
+}
+
+function renderMetaPills() {
+  const accCont = document.getElementById('meta-accounts');
+  const epCont  = document.getElementById('meta-endpoints');
+
+  accCont.innerHTML = _metaAccounts.map((a, i) =>
+    `<button class="pill${i===0?' active':''}" id="meta-acc-${i}" onclick="metaSelectAcc(${i})">${esc(a.name)}</button>`
+  ).join('');
+
+  epCont.innerHTML = _metaEndpoints.map((e, i) =>
+    `<button class="pill${i===0?' active':''}" id="meta-ep-${i}" onclick="metaSelectEp(${i})">${esc(e.label)}</button>`
+  ).join('');
+
+  _metaSelAcc = 0;
+  _metaSelEp  = 0;
+  if (_metaEndpoints[0]) document.getElementById('meta-fields').value = _metaEndpoints[0].defaultFields || '';
+}
+
+function metaSelectAcc(i) {
+  _metaSelAcc = i;
+  document.querySelectorAll('[id^="meta-acc-"]').forEach((b,j) => b.classList.toggle('active', j===i));
+}
+
+function metaSelectEp(i) {
+  _metaSelEp = i;
+  document.querySelectorAll('[id^="meta-ep-"]').forEach((b,j) => b.classList.toggle('active', j===i));
+  const ep = _metaEndpoints[i];
+  if (ep) document.getElementById('meta-fields').value = ep.defaultFields || '';
+}
+
+async function metaFetch() {
+  const btn    = document.getElementById('btn-meta');
+  const status = document.getElementById('fs-meta');
+  const body   = document.getElementById('body-meta');
+  const raw    = document.getElementById('raw-meta');
+
+  if (_metaSelAcc === null || _metaSelEp === null) { alert('Sélectionnez un compte et un endpoint.'); return; }
+
+  const acc    = _metaAccounts[_metaSelAcc];
+  const ep     = _metaEndpoints[_metaSelEp];
+  const fields = document.getElementById('meta-fields').value.trim() || ep.defaultFields;
+
+  btn.disabled = true; btn.innerHTML = '<span>⏳</span> Loading…';
+  status.textContent = ''; status.className = 'fetch-status';
+  body.innerHTML = '<div class="state-msg">Fetching…</div>';
+  raw.textContent = ''; raw.classList.remove('visible');
+
+  // Build URL
+  const p = new URLSearchParams({ fields });
+  if (ep.extraParams) Object.entries(ep.extraParams).forEach(([k,v]) => p.set(k, v));
+
+  const pathMap = { '': '', '/campaigns': '/campaigns', '/adsets': '/adsets', '/ads': '/ads', '/insights': '/insights' };
+  const epPath  = pathMap[ep.path] ?? ep.path;
+  const url     = `/api/meta/${encodeURIComponent(acc.id)}${epPath}?${p}`;
+
+  try {
+    const res  = await fetch(url);
+    const data = await res.json();
+    raw.textContent = JSON.stringify(data, null, 2);
+    if (!res.ok) {
+      status.textContent = '✗ ' + res.status; status.className = 'fetch-status err';
+      body.innerHTML = `<div class="state-msg" style="color:#c62828">${data.error||'Erreur'}</div>`;
+    } else {
+      status.textContent = `✓ OK · ${acc.name} / ${ep.label}`; status.className = 'fetch-status ok';
+      renderMeta(data, ep, body, raw);
+    }
+  } catch (e) {
+    status.textContent = '✗ Network error'; status.className = 'fetch-status err';
+    body.innerHTML = `<div class="state-msg" style="color:#c62828">${e.message}</div>`;
+  }
+  btn.disabled = false; btn.innerHTML = '<span>⟳</span> Fetch';
+}
+
+function renderMeta(data, ep, body, raw) {
+  // Account info → KV grid
+  if (!ep.path || ep.path === '') {
+    const d = data;
+    const fields = Object.entries(d)
+      .filter(([k]) => k !== 'id')
+      .map(([k,v]) => [k, typeof v === 'object' ? JSON.stringify(v) : String(v ?? '')]);
+    body.innerHTML = `<div class="kv-grid">${fields.map(([k,v]) =>
+      `<div class="kv-item"><div class="kv-key">${esc(k)}</div><div class="kv-val">${esc(v)}</div></div>`
+    ).join('')}</div>`;
+    appendPagination(body, 1, 1, raw, 'meta');
+    return;
+  }
+
+  // List endpoints → table
+  const items = data.data || (Array.isArray(data) ? data : []);
+  if (!items.length) {
+    body.innerHTML = '<div class="state-msg">Aucun résultat.</div>';
+    appendPagination(body, 0, 0, raw, 'meta');
+    return;
+  }
+
+  // Build dynamic columns from first item's keys
+  const keys = Object.keys(items[0]).filter(k => k !== 'id' && k !== 'account_id');
+  const rows = items.map(item => `<tr>
+    <td><span class="cell-id">${esc(item.id||'')}</span></td>
+    ${keys.map(k => {
+      const v = item[k];
+      const s = v == null ? '—' : typeof v === 'object' ? JSON.stringify(v) : String(v);
+      // Status-like fields
+      if (k === 'status' || k === 'effective_status') {
+        return `<td><span class="cell-badge ${metaStatusBadge(s)}">${esc(s)}</span></td>`;
+      }
+      return `<td>${esc(s)}</td>`;
+    }).join('')}
+  </tr>`).join('');
+
+  body.innerHTML = `<div class="data-table-wrap"><table>
+    <thead><tr><th>ID</th>${keys.map(k=>`<th>${esc(k)}</th>`).join('')}</tr></thead>
+    <tbody>${rows}</tbody>
+  </table></div>`;
+  appendPagination(body, data.paging ? '?' : items.length, items.length, raw, 'meta');
+}
+
+function metaStatusBadge(s) {
+  if (!s) return 'badge-grey';
+  const l = s.toLowerCase();
+  if (['active','paused'].includes(l)) return l === 'active' ? 'badge-green' : 'badge-orange';
+  if (l.includes('archived') || l.includes('deleted')) return 'badge-grey';
+  return 'badge-blue';
+}
+
+// ══════════════════════════════════════════════════════════════════
+// SHARED HELPERS
+// ══════════════════════════════════════════════════════════════════
 function appendPagination(body, total, shown, raw, section) {
   const footer = document.createElement('div');
   footer.className = 'pagination-row';
   footer.innerHTML = `
-    <span>Showing <strong>${shown}</strong> of <strong>${total}</strong></span>
-    <button class="json-toggle" onclick="toggleRaw('${section}')">{ } View raw JSON</button>`;
+    <span>Showing <strong>${shown}</strong>${total !== shown ? ' of <strong>'+total+'</strong>' : ''}</span>
+    ${raw ? `<button class="json-toggle" onclick="toggleRaw('${section}')">{ } View raw JSON</button>` : ''}`;
   body.appendChild(footer);
 }
 
@@ -745,30 +1183,25 @@ function toggleRaw(section) {
   if (el) el.classList.toggle('visible');
 }
 
-// ── Helpers ──────────────────────────────────────────────────────
 function esc(str) {
   return String(str)
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 function formatTotal(raw, currency) {
   if (raw == null) return '—';
   const cur = currency?.code || currency || 'TND';
-  // Handle nested object: { totalPrice, basePrice, deliveryCost, deliveryPrice, ... }
   if (typeof raw === 'object') {
     const amount = raw.totalPrice ?? raw.basePrice ?? raw.amount ?? raw.value ?? raw.total ?? raw.price;
-    const objCur = raw.currency?.code || raw.currency || cur;
-    return formatTotal(amount, objCur);
+    return formatTotal(amount, raw.currency?.code || raw.currency || cur);
   }
   if (typeof raw === 'string') {
-    // "69.0TND" or "1200.00DZD" — number then 3-letter code
     const m = raw.match(/^([\d.,]+)\s*([A-Z]{3})$/);
-    if (m) return formatPrice(parseFloat(m[1].replace(',', '.')), m[2]);
-    // "TND 69.0" — code then number
+    if (m) return formatPrice(parseFloat(m[1].replace(',','.')), m[2]);
     const m2 = raw.match(/^([A-Z]{3})\s*([\d.,]+)$/);
-    if (m2) return formatPrice(parseFloat(m2[2].replace(',', '.')), m2[1]);
-    const num = parseFloat(raw.replace(',', '.'));
+    if (m2) return formatPrice(parseFloat(m2[2].replace(',','.')), m2[1]);
+    const num = parseFloat(raw.replace(',','.'));
     if (!isNaN(num)) return formatPrice(num, cur);
     return raw.trim() || '—';
   }
@@ -778,56 +1211,22 @@ function formatTotal(raw, currency) {
 
 function formatPrice(amount, currency) {
   try {
-    return new Intl.NumberFormat(undefined, {
-      style: 'currency', currency: currency || 'USD',
-    }).format(amount);
-  } catch { return amount + (currency ? ' ' + currency : ''); }
+    return new Intl.NumberFormat(undefined, { style:'currency', currency: currency||'USD' }).format(amount);
+  } catch { return amount + (currency ? ' '+currency : ''); }
 }
 
 function statusBadge(status) {
   if (!status) return 'badge-grey';
   const s = status.toLowerCase();
   if (['active','paid','completed','delivered','published'].some(x => s.includes(x))) return 'badge-green';
-  if (['pending','processing','draft'].some(x => s.includes(x)))                       return 'badge-orange';
-  if (['shipped','in transit','confirmed'].some(x => s.includes(x)))                   return 'badge-blue';
+  if (['pending','processing','draft'].some(x => s.includes(x)))  return 'badge-orange';
+  if (['shipped','in transit','confirmed'].some(x => s.includes(x))) return 'badge-blue';
   return 'badge-grey';
 }
 
-// ── CSV Export ───────────────────────────────────────────────────
-async function exportProductsCSV() {
-  const btn = document.getElementById('btn-export-csv');
-  btn.disabled = true;
-  btn.innerHTML = '<span>⏳</span> Exporting…';
-
-  try {
-    const res = await fetch('/api/converty/export/products-csv');
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      alert('Export failed: ' + (err.error || res.statusText));
-      return;
-    }
-
-    const blob     = await res.blob();
-    const url      = URL.createObjectURL(blob);
-    const a        = document.createElement('a');
-    const cd       = res.headers.get('Content-Disposition') || '';
-    const match    = cd.match(/filename="?([^"]+)"?/);
-    a.download     = match ? match[1] : 'products-sales.csv';
-    a.href         = url;
-    a.style.display = 'none';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  } catch (e) {
-    alert('Export error: ' + e.message);
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = '<span>⬇</span> Export CSV';
-  }
-}
-
+// ── Kick off ──────────────────────────────────────────────────────
 init();
+metaInit();
 </script>
 </body>
 </html>
