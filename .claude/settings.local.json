@@ -5,5 +5,20 @@
       "Bash(git commit -m ' *)",
       "Bash(git push *)"
     ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "file=$(jq -r '.tool_input.file_path // \"file\"' 2>/dev/null); git add . && (git diff --cached --quiet || (git commit -m \"auto: update $(basename \"$file\")\" && git push)) 2>/dev/null || true",
+            "timeout": 60,
+            "statusMessage": "Committing and pushing..."
+          }
+        ]
+      }
+    ]
   }
 }

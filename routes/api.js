@@ -102,6 +102,97 @@ router.get('/orders/:id', requireAuth, async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────
+// CSV EXPORT — products sales report
+// ─────────────────────────────────────────────────────────────
+
+// GET /api/converty/export/products-csv
+// Fetches all orders across all pages and returns a CSV file with
+// one row per (product × order), grouped by product name.
+router.get('/export/products-csv', requireAuth, async (req, res) => {
+  try {
+    const LIMIT = 200;
+    let page = 1;
+    const allOrders = [];
+
+    // Paginate through all orders
+    while (true) {
+      const data = await convertyGet(req, '/orders', { page, limit: LIMIT });
+      const batch = data.data || data.orders || (Array.isArray(data) ? data : []);
+      if (!batch.length) break;
+      allOrders.push(...batch);
+      if (batch.length < LIMIT) break;
+      page++;
+    }
+
+    // Flatten to one row per (product × order)
+    const rows = [];
+    for (const order of allOrders) {
+      const cart = Array.isArray(order.cart) ? order.cart : [];
+      const t    = order.total || {};
+      const cur  = order.currencyCode || 'TND';
+
+      for (const item of cart) {
+        rows.push({
+          productName:      item.product?.name || '—',
+          productPrice:     item.product?.price ?? '',
+          orderRef:         order.reference || '',
+          orderDate:        order.createdAt ? new Date(order.createdAt).toLocaleDateString('en-GB') : '',
+          orderStatus:      order.status || '',
+          buyerName:        order.customer?.name  || '',
+          buyerPhone:       order.customer?.phone || '',
+          buyerCity:        order.customer?.city  || '',
+          qty:              item.quantity || 1,
+          unitPrice:        item.pricePerUnit ?? item.product?.price ?? '',
+          deliveryCharged:  t.deliveryPrice  ?? 0,
+          deliveryCost:     t.deliveryCost   ?? 0,
+          orderTotal:       t.totalPrice     ?? t.basePrice ?? '',
+          currency:         cur,
+        });
+      }
+    }
+
+    // Sort by product name so all rows for the same product are together
+    rows.sort((a, b) => String(a.productName).localeCompare(String(b.productName)));
+
+    // CSV helpers
+    function csvField(val) {
+      const s = String(val ?? '');
+      return (s.includes(',') || s.includes('"') || s.includes('\n'))
+        ? '"' + s.replace(/"/g, '""') + '"'
+        : s;
+    }
+
+    const headers = [
+      'Product Name', 'Product Price', 'Order #', 'Order Date', 'Order Status',
+      'Buyer Name', 'Buyer Phone', 'Buyer City',
+      'Qty', 'Unit Price', 'Delivery (Customer)', 'Delivery Cost (Merchant)',
+      'Order Total', 'Currency',
+    ];
+
+    const lines = [
+      headers.map(csvField).join(','),
+      ...rows.map(r => [
+        r.productName, r.productPrice, r.orderRef, r.orderDate, r.orderStatus,
+        r.buyerName, r.buyerPhone, r.buyerCity,
+        r.qty, r.unitPrice, r.deliveryCharged, r.deliveryCost,
+        r.orderTotal, r.currency,
+      ].map(csvField).join(',')),
+    ];
+
+    const csv      = lines.join('\n');
+    const filename = `products-sales-${new Date().toISOString().slice(0, 10)}.csv`;
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    // UTF-8 BOM so Excel opens Arabic/French text correctly
+    res.send('\uFEFF' + csv);
+
+  } catch (err) {
+    handleError(res, err);
+  }
+});
+
+// ─────────────────────────────────────────────────────────────
 // WEBHOOKS
 // ─────────────────────────────────────────────────────────────
 

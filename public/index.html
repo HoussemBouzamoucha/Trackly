@@ -161,6 +161,14 @@
     }
     .btn-fetch:hover { background: #3C3489; }
     .btn-fetch:disabled { background: #bbb; cursor: not-allowed; }
+    .btn-export {
+      background: #fff; color: #534AB7; border: 1.5px solid #534AB7;
+      border-radius: 7px; padding: 7px 16px; font-size: 13px;
+      font-weight: 600; cursor: pointer; transition: background 0.15s, color 0.15s;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .btn-export:hover { background: #534AB7; color: #fff; }
+    .btn-export:disabled { border-color: #bbb; color: #bbb; cursor: not-allowed; }
     .fetch-status { font-size: 12px; }
     .fetch-status.ok { color: #2e7d32; }
     .fetch-status.err { color: #c62828; }
@@ -357,6 +365,9 @@
             <input type="number" id="o-limit" value="10" min="1" max="200" />
           </div>
           <span class="fetch-status" id="fs-orders"></span>
+          <button class="btn-export" id="btn-export-csv" onclick="exportProductsCSV()">
+            <span>⬇</span> Export CSV
+          </button>
           <button class="btn-fetch" id="btn-orders" onclick="fetchSection('orders')">
             <span>⟳</span> Fetch
           </button>
@@ -780,6 +791,40 @@ function statusBadge(status) {
   if (['pending','processing','draft'].some(x => s.includes(x)))                       return 'badge-orange';
   if (['shipped','in transit','confirmed'].some(x => s.includes(x)))                   return 'badge-blue';
   return 'badge-grey';
+}
+
+// ── CSV Export ───────────────────────────────────────────────────
+async function exportProductsCSV() {
+  const btn = document.getElementById('btn-export-csv');
+  btn.disabled = true;
+  btn.innerHTML = '<span>⏳</span> Exporting…';
+
+  try {
+    const res = await fetch('/api/converty/export/products-csv');
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      alert('Export failed: ' + (err.error || res.statusText));
+      return;
+    }
+
+    const blob     = await res.blob();
+    const url      = URL.createObjectURL(blob);
+    const a        = document.createElement('a');
+    const cd       = res.headers.get('Content-Disposition') || '';
+    const match    = cd.match(/filename="?([^"]+)"?/);
+    a.download     = match ? match[1] : 'products-sales.csv';
+    a.href         = url;
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch (e) {
+    alert('Export error: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<span>⬇</span> Export CSV';
+  }
 }
 
 init();
