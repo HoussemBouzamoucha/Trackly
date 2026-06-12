@@ -491,23 +491,34 @@
         const res = await fetch(`/api/dashboard/summary/${currentPeriod}`);
         const data = await res.json();
 
-        document.getElementById('kpi-total-orders').textContent = data.totalOrdersCount;
-        document.getElementById('counter-confirmed').textContent = data.confirmedOrdersCount;
-        document.getElementById('counter-delivered').textContent = data.deliveredOrdersCount;
-        document.getElementById('counter-returned').textContent = data.returnedOrdersCount;
+        // Safe formatting functions
+        const formatNumber = (val) => isFinite(val) ? val : 0;
+        const formatCurrency = (val) => `TND ${formatNumber(val).toFixed(2)}`;
+        const formatPercent = (val) => `${formatNumber(val).toFixed(1)}%`;
+        const formatRoas = (val) => `${formatNumber(val).toFixed(2)}x`;
 
-        document.getElementById('kpi-delivered-revenue').textContent = `$${data.deliveredRevenue.toFixed(2)}`;
-        document.getElementById('kpi-ad-spend').textContent = `$${data.totalAdsSpend.toFixed(2)}`;
-        document.getElementById('kpi-net-profit').textContent = `$${data.netProfit.toFixed(2)}`;
+        document.getElementById('kpi-total-orders').textContent = formatNumber(data.totalOrdersCount) || 0;
+        document.getElementById('counter-confirmed').textContent = formatNumber(data.confirmedOrdersCount) || 0;
+        document.getElementById('counter-delivered').textContent = formatNumber(data.deliveredOrdersCount) || 0;
+        document.getElementById('counter-returned').textContent = formatNumber(data.returnedOrdersCount) || 0;
 
-        document.getElementById('kpi-cost-per-order').textContent = `$${data.costPerOrder.toFixed(2)}`;
-        document.getElementById('kpi-confirmation-rate').textContent = `${data.confirmationRate.toFixed(1)}%`;
-        document.getElementById('kpi-delivery-rate').textContent = `${data.deliveryRate.toFixed(1)}%`;
-        document.getElementById('kpi-return-rate').textContent = `${data.returnRate.toFixed(1)}%`;
-        document.getElementById('kpi-delivered-roas').textContent = `${data.deliveredRoas.toFixed(2)}x`;
-        document.getElementById('kpi-profit-roas').textContent = `${data.profitRoas.toFixed(2)}x`;
+        document.getElementById('kpi-delivered-revenue').textContent = formatCurrency(data.deliveredRevenue);
+        document.getElementById('kpi-ad-spend').textContent = formatCurrency(data.totalAdsSpend);
+        document.getElementById('kpi-net-profit').textContent = formatCurrency(data.netProfit);
+
+        document.getElementById('kpi-cost-per-order').textContent = formatCurrency(data.costPerOrder);
+        document.getElementById('kpi-confirmation-rate').textContent = formatPercent(data.confirmationRate);
+        document.getElementById('kpi-delivery-rate').textContent = formatPercent(data.deliveryRate);
+        document.getElementById('kpi-return-rate').textContent = formatPercent(data.returnRate);
+        document.getElementById('kpi-delivered-roas').textContent = formatRoas(data.deliveredRoas);
+        document.getElementById('kpi-profit-roas').textContent = formatRoas(data.profitRoas);
       } catch (err) {
-        console.error(err);
+        console.error('Error loading KPIs:', err);
+        // Show default values on error
+        document.getElementById('kpi-total-orders').textContent = 0;
+        document.getElementById('kpi-delivered-revenue').textContent = 'TND 0.00';
+        document.getElementById('kpi-ad-spend').textContent = 'TND 0.00';
+        document.getElementById('kpi-net-profit').textContent = 'TND 0.00';
       }
     }
 
