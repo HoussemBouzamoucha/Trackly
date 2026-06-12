@@ -396,6 +396,7 @@
     <button class="nav-tab"        id="tab-btn-firstdelivery" onclick="showTab('firstdelivery')">📦 First Delivery</button>
     <button class="nav-tab"        id="tab-btn-tictac"        onclick="showTab('tictac')">🚚 Tictac</button>
     <button class="nav-tab"        id="tab-btn-metaads"       onclick="showTab('metaads')">📊 Meta Ads</button>
+    <button class="nav-tab"        id="tab-btn-trackly"       onclick="window.location.href='/dashboard.html'">💼 Trackly Dashboard</button>
   </nav>
   <span id="status-badge" class="badge">Not connected</span>
 </header>
@@ -406,155 +407,9 @@
        TAB: DASHBOARD
   ════════════════════════════════════════ -->
   <div class="tab-panel active" id="tab-dashboard">
-    <!-- Quick Actions Panel -->
+    <!-- Header -->
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
       <h2 style="font-size: 20px; font-weight: 700;">Financial Dashboard</h2>
-      <div style="display: flex; gap: 8px;">
-        <button class="btn-fetch" style="background:#534AB7" onclick="toggleForm('product')">➕ Log Product Sale</button>
-        <button class="btn-fetch" style="background:#534AB7" onclick="toggleForm('meta')">➕ Log Meta Ads Spend</button>
-        <button class="btn-fetch" style="background:#534AB7" onclick="toggleForm('expense')">➕ Log Expense</button>
-      </div>
-    </div>
-
-    <!-- Collapsible Forms -->
-    <!-- Product Sale Form -->
-    <div id="form-product" class="db-form-section">
-      <h3 style="font-size: 15px; font-weight: 600; margin-bottom: 16px; color: #534AB7;">Log a Product Sale</h3>
-      <form onsubmit="submitProduct(event)">
-        <div class="db-form-grid">
-          <div class="db-form-group">
-            <label>Product Name</label>
-            <input type="text" id="fps-name" required placeholder="e.g. Leather Wallet" />
-          </div>
-          <div class="db-form-group">
-            <label>Quantity</label>
-            <input type="number" id="fps-qty" required min="1" value="1" />
-          </div>
-          <div class="db-form-group">
-            <label>Price (TND)</label>
-            <input type="number" id="fps-price" required step="0.01" min="0" placeholder="0.00" />
-          </div>
-          <div class="db-form-group">
-            <label>Delivery Company</label>
-            <select id="fps-delivery">
-              <option value="First Delivery">First Delivery</option>
-              <option value="Tictac">Tictac</option>
-              <option value="Aramex">Aramex</option>
-              <option value="Self Delivered">Self Delivered</option>
-              <option value="Other">Other</option>
-            </select>
-          </div>
-          <div class="db-form-group">
-            <label>Sale Date</label>
-            <input type="date" id="fps-date" required />
-          </div>
-        </div>
-        <div class="db-form-actions">
-          <button type="button" class="btn-cancel" onclick="toggleForm('product')">Cancel</button>
-          <button type="submit" class="btn-submit">Save Sale</button>
-        </div>
-      </form>
-    </div>
-
-    <!-- Meta Ads Spend Form -->
-    <div id="form-meta" class="db-form-section">
-      <h3 style="font-size: 15px; font-weight: 600; margin-bottom: 16px; color: #534AB7;">Log Meta Ads Spend</h3>
-      <form onsubmit="submitMeta(event)">
-        <div class="db-form-grid">
-          <div class="db-form-group">
-            <label>Campaign Name</label>
-            <input type="text" id="fma-campaign" required placeholder="e.g. Summer Promo 2026" />
-          </div>
-          <div class="db-form-group">
-            <label>Amount Spent (TND)</label>
-            <input type="number" id="fma-spent" required step="0.01" min="0" placeholder="0.00" />
-          </div>
-          <div class="db-form-group">
-            <label>Impressions (Optional)</label>
-            <input type="number" id="fma-impressions" min="0" placeholder="0" />
-          </div>
-          <div class="db-form-group">
-            <label>Clicks (Optional)</label>
-            <input type="number" id="fma-clicks" min="0" placeholder="0" />
-          </div>
-          <div class="db-form-group">
-            <label>Conversions (Optional)</label>
-            <input type="number" id="fma-conversions" min="0" placeholder="0" />
-          </div>
-          <div class="db-form-group">
-            <label>Date</label>
-            <input type="date" id="fma-date" required />
-          </div>
-        </div>
-        <div class="db-form-actions">
-          <button type="button" class="btn-cancel" onclick="toggleForm('meta')">Cancel</button>
-          <button type="submit" class="btn-submit">Save Ad Spend</button>
-        </div>
-      </form>
-    </div>
-
-    <!-- Expense Form -->
-    <div id="form-expense" class="db-form-section">
-      <h3 style="font-size: 15px; font-weight: 600; margin-bottom: 16px; color: #534AB7;">Log a Personal Expense</h3>
-      <form onsubmit="submitExpense(event)">
-        <div class="db-form-grid">
-          <div class="db-form-group">
-            <label>Amount (TND)</label>
-            <input type="number" id="fex-amount" required step="0.01" min="0" placeholder="0.00" />
-          </div>
-          <div class="db-form-group">
-            <label>Category</label>
-            <select id="fex-category">
-              <option value="Software/SaaS">Software/SaaS</option>
-              <option value="Marketing">Marketing</option>
-              <option value="Logistics/Delivery">Logistics/Delivery</option>
-              <option value="Office Supplies">Office Supplies</option>
-              <option value="Travel">Travel</option>
-              <option value="Salaries/Contractors">Salaries/Contractors</option>
-              <option value="Personal">Personal</option>
-              <option value="Other">Other</option>
-            </select>
-          </div>
-          <div class="db-form-group" style="grid-column: span 2;">
-            <label>Description</label>
-            <input type="text" id="fex-description" required placeholder="e.g. Hosting subscription" />
-          </div>
-          <div class="db-form-group">
-            <label>Expense Date</label>
-            <input type="date" id="fex-date" required />
-          </div>
-        </div>
-
-        <div style="font-size: 12px; font-weight: 600; text-transform: uppercase; color: #888; margin: 16px 0 8px; border-bottom: 1px dashed #e2e2da; padding-bottom: 4px;">Optional Metadata Fields (5 Fields)</div>
-
-        <div class="db-form-grid">
-          <div class="db-form-group">
-            <label>Payment Method (Optional)</label>
-            <input type="text" id="fex-field1" placeholder="e.g. Visa card, Cash" />
-          </div>
-          <div class="db-form-group">
-            <label>Vendor/Merchant (Optional)</label>
-            <input type="text" id="fex-field2" placeholder="e.g. Stripe, AWS" />
-          </div>
-          <div class="db-form-group">
-            <label>Invoice/Receipt Ref (Optional)</label>
-            <input type="text" id="fex-field3" placeholder="e.g. #INV-492" />
-          </div>
-          <div class="db-form-group">
-            <label>Tax/VAT Info (Optional)</label>
-            <input type="text" id="fex-field4" placeholder="e.g. 19% VAT" />
-          </div>
-          <div class="db-form-group">
-            <label>Additional Notes (Optional)</label>
-            <input type="text" id="fex-field5" placeholder="e.g. Reimbursement pending" />
-          </div>
-        </div>
-
-        <div class="db-form-actions" style="margin-top: 20px;">
-          <button type="button" class="btn-cancel" onclick="toggleForm('expense')">Cancel</button>
-          <button type="submit" class="btn-submit">Save Expense</button>
-        </div>
-      </form>
     </div>
 
     <!-- KPI Cards Grid -->
@@ -566,7 +421,6 @@
         <div class="db-kpi-breakdown">
           <div>Sales: <span id="kpi-rev-daily" style="font-weight: 600;">—</span></div>
           <div>Ad Cost: <span id="kpi-ads-daily" style="color: #c62828;">—</span></div>
-          <div>Expenses: <span id="kpi-exp-daily" style="color: #e65100;">—</span></div>
           <div id="kpi-margin-daily" class="db-kpi-margin">—</div>
         </div>
       </div>
@@ -577,7 +431,6 @@
         <div class="db-kpi-breakdown">
           <div>Sales: <span id="kpi-rev-weekly" style="font-weight: 600;">—</span></div>
           <div>Ad Cost: <span id="kpi-ads-weekly" style="color: #c62828;">—</span></div>
-          <div>Expenses: <span id="kpi-exp-weekly" style="color: #e65100;">—</span></div>
           <div id="kpi-margin-weekly" class="db-kpi-margin">—</div>
         </div>
       </div>
@@ -588,7 +441,6 @@
         <div class="db-kpi-breakdown">
           <div>Sales: <span id="kpi-rev-monthly" style="font-weight: 600;">—</span></div>
           <div>Ad Cost: <span id="kpi-ads-monthly" style="color: #c62828;">—</span></div>
-          <div>Expenses: <span id="kpi-exp-monthly" style="color: #e65100;">—</span></div>
           <div id="kpi-margin-monthly" class="db-kpi-margin">—</div>
         </div>
       </div>
@@ -599,7 +451,6 @@
         <div class="db-kpi-breakdown">
           <div>Sales: <span id="kpi-rev-yearly" style="font-weight: 600;">—</span></div>
           <div>Ad Cost: <span id="kpi-ads-yearly" style="color: #c62828;">—</span></div>
-          <div>Expenses: <span id="kpi-exp-yearly" style="color: #e65100;">—</span></div>
           <div id="kpi-margin-yearly" class="db-kpi-margin">—</div>
         </div>
       </div>
@@ -624,7 +475,6 @@
       <div style="padding: 0 20px 10px; border-bottom: 1px solid #f0f0ea; display: flex; gap: 8px;">
         <button class="pill active" id="db-subtab-btn-products" onclick="showDbSubtab('products')">📦 Products Sold (<span id="db-count-products">0</span>)</button>
         <button class="pill" id="db-subtab-btn-ads" onclick="showDbSubtab('ads')">📊 Ads Spending (<span id="db-count-ads">0</span>)</button>
-        <button class="pill" id="db-subtab-btn-expenses" onclick="showDbSubtab('expenses')">💸 Expenses (<span id="db-count-expenses">0</span>)</button>
       </div>
 
       <!-- Products Sold Table -->
@@ -638,13 +488,6 @@
       <div class="db-subtab-panel" id="db-subtab-ads" style="display: none;">
         <div class="section-body" id="db-body-ads">
           <div class="state-msg">No ads logged in this period.</div>
-        </div>
-      </div>
-
-      <!-- Personal Expenses Table -->
-      <div class="db-subtab-panel" id="db-subtab-expenses" style="display: none;">
-        <div class="section-body" id="db-body-expenses">
-          <div class="state-msg">No expenses logged in this period.</div>
         </div>
       </div>
     </div>
@@ -967,20 +810,6 @@ function showDbSubtab(tabName) {
   document.getElementById('db-subtab-btn-' + tabName).classList.add('active');
 }
 
-function toggleForm(formName) {
-  const form = document.getElementById('form-' + formName);
-  const isActive = form.classList.contains('active');
-  document.querySelectorAll('.db-form-section').forEach(f => f.classList.remove('active'));
-  if (!isActive) {
-    form.classList.add('active');
-    // Set default date to today
-    const dateInput = form.querySelector('input[type="date"]');
-    if (dateInput) {
-      dateInput.value = new Date().toISOString().substring(0, 10);
-    }
-  }
-}
-
 async function loadDashboard() {
   const periods = ['daily', 'weekly', 'monthly', 'yearly'];
   try {
@@ -999,7 +828,6 @@ async function loadDashboard() {
 
       document.getElementById('kpi-rev-' + p).textContent = formatPrice(data.revenue, 'TND');
       document.getElementById('kpi-ads-' + p).textContent = formatPrice(data.metaCost, 'TND');
-      document.getElementById('kpi-exp-' + p).textContent = formatPrice(data.totalExpenses, 'TND');
 
       const marginDiv = document.getElementById('kpi-margin-' + p);
       marginDiv.textContent = `Margin: ${data.profitMargin}%`;
@@ -1014,12 +842,11 @@ async function loadDashboard() {
 }
 
 function renderDbDetails() {
-  const data = dashboardData[currentDbPeriod] || { products: [], expenses: [], metaSpending: [] };
+  const data = dashboardData[currentDbPeriod] || { products: [], metaSpending: [] };
   
   // Update badges
   document.getElementById('db-count-products').textContent = data.products?.length || 0;
   document.getElementById('db-count-ads').textContent = data.metaSpending?.length || 0;
-  document.getElementById('db-count-expenses').textContent = data.expenses?.length || 0;
 
   // Render Products Table
   const prodBody = document.getElementById('db-body-products');
@@ -1032,7 +859,6 @@ function renderDbDetails() {
         <td>${formatPrice(p.quantity * p.price, 'TND')}</td>
         <td><span class="cell-badge badge-blue">${esc(p.delivery_company || '—')}</span></td>
         <td>${new Date(p.sale_date).toLocaleDateString()}</td>
-        <td><button class="btn-delete-row" onclick="deleteDbRecord('products', ${p.id})">Delete</button></td>
       </tr>
     `).join('');
     prodBody.innerHTML = `
@@ -1046,7 +872,6 @@ function renderDbDetails() {
               <th>Total Price</th>
               <th>Delivery Company</th>
               <th>Sale Date</th>
-              <th>Action</th>
             </tr>
           </thead>
           <tbody>${rows}</tbody>
@@ -1068,7 +893,6 @@ function renderDbDetails() {
         <td>${ad.clicks != null ? ad.clicks.toLocaleString() : '—'}</td>
         <td>${ad.conversions != null ? ad.conversions.toLocaleString() : '—'}</td>
         <td>${new Date(ad.date).toLocaleDateString()}</td>
-        <td><button class="btn-delete-row" onclick="deleteDbRecord('meta-ads', ${ad.id})">Delete</button></td>
       </tr>
     `).join('');
     adsBody.innerHTML = `
@@ -1082,7 +906,6 @@ function renderDbDetails() {
               <th>Clicks</th>
               <th>Conversions</th>
               <th>Date</th>
-              <th>Action</th>
             </tr>
           </thead>
           <tbody>${rows}</tbody>
@@ -1091,150 +914,6 @@ function renderDbDetails() {
     `;
   } else {
     adsBody.innerHTML = '<div class="state-msg">No ads logged in this period.</div>';
-  }
-
-  // Render Expenses Table
-  const expBody = document.getElementById('db-body-expenses');
-  if (data.expenses && data.expenses.length > 0) {
-    const rows = data.expenses.map(e => `
-      <tr>
-        <td style="color:#e65100; font-weight:600">${formatPrice(e.amount, 'TND')}</td>
-        <td><span class="cell-badge badge-grey">${esc(e.category || 'Other')}</span></td>
-        <td><strong>${esc(e.description || '—')}</strong></td>
-        <td>${new Date(e.expense_date).toLocaleDateString()}</td>
-        <td>
-          <div style="font-size:11px; color:#666">
-            ${e.field1 ? `<div><strong>Pay:</strong> ${esc(e.field1)}</div>` : ''}
-            ${e.field2 ? `<div><strong>Vendor:</strong> ${esc(e.field2)}</div>` : ''}
-            ${e.field3 ? `<div><strong>Ref:</strong> ${esc(e.field3)}</div>` : ''}
-            ${e.field4 ? `<div><strong>Tax:</strong> ${esc(e.field4)}</div>` : ''}
-            ${e.field5 ? `<div><strong>Notes:</strong> ${esc(e.field5)}</div>` : ''}
-            ${(!e.field1 && !e.field2 && !e.field3 && !e.field4 && !e.field5) ? '—' : ''}
-          </div>
-        </td>
-        <td><button class="btn-delete-row" onclick="deleteDbRecord('expenses', ${e.id})">Delete</button></td>
-      </tr>
-    `).join('');
-    expBody.innerHTML = `
-      <div class="data-table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Amount</th>
-              <th>Category</th>
-              <th>Description</th>
-              <th>Date</th>
-              <th>Optional Metadata (5 fields)</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>${rows}</tbody>
-        </table>
-      </div>
-    `;
-  } else {
-    expBody.innerHTML = '<div class="state-msg">No expenses logged in this period.</div>';
-  }
-}
-
-async function submitProduct(event) {
-  event.preventDefault();
-  const body = {
-    product_name: document.getElementById('fps-name').value,
-    quantity: document.getElementById('fps-qty').value,
-    price: document.getElementById('fps-price').value,
-    delivery_company: document.getElementById('fps-delivery').value,
-    sale_date: document.getElementById('fps-date').value
-  };
-  try {
-    const res = await fetch('/api/dashboard/products', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
-    if (!res.ok) throw new Error('Failed to save product sale');
-    toggleForm('product');
-    document.getElementById('fps-name').value = '';
-    document.getElementById('fps-price').value = '';
-    loadDashboard();
-  } catch (err) {
-    alert(err.message);
-  }
-}
-
-async function submitMeta(event) {
-  event.preventDefault();
-  const body = {
-    campaign_name: document.getElementById('fma-campaign').value,
-    amount_spent: document.getElementById('fma-spent').value,
-    impressions: document.getElementById('fma-impressions').value || null,
-    clicks: document.getElementById('fma-clicks').value || null,
-    conversions: document.getElementById('fma-conversions').value || null,
-    date: document.getElementById('fma-date').value
-  };
-  try {
-    const res = await fetch('/api/dashboard/meta-ads', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
-    if (!res.ok) throw new Error('Failed to save ad spend');
-    toggleForm('meta');
-    document.getElementById('fma-campaign').value = '';
-    document.getElementById('fma-spent').value = '';
-    document.getElementById('fma-impressions').value = '';
-    document.getElementById('fma-clicks').value = '';
-    document.getElementById('fma-conversions').value = '';
-    loadDashboard();
-  } catch (err) {
-    alert(err.message);
-  }
-}
-
-async function submitExpense(event) {
-  event.preventDefault();
-  const body = {
-    amount: document.getElementById('fex-amount').value,
-    category: document.getElementById('fex-category').value,
-    description: document.getElementById('fex-description').value,
-    expense_date: document.getElementById('fex-date').value,
-    field1: document.getElementById('fex-field1').value || null,
-    field2: document.getElementById('fex-field2').value || null,
-    field3: document.getElementById('fex-field3').value || null,
-    field4: document.getElementById('fex-field4').value || null,
-    field5: document.getElementById('fex-field5').value || null
-  };
-  try {
-    const res = await fetch('/api/dashboard/expenses', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
-    if (!res.ok) throw new Error('Failed to save expense');
-    toggleForm('expense');
-    document.getElementById('fex-amount').value = '';
-    document.getElementById('fex-description').value = '';
-    document.getElementById('fex-field1').value = '';
-    document.getElementById('fex-field2').value = '';
-    document.getElementById('fex-field3').value = '';
-    document.getElementById('fex-field4').value = '';
-    document.getElementById('fex-field5').value = '';
-    loadDashboard();
-  } catch (err) {
-    alert(err.message);
-  }
-}
-
-async function deleteDbRecord(type, id) {
-  if (!confirm('Are you sure you want to delete this record?')) return;
-  try {
-    const res = await fetch(`/api/dashboard/${type}/${id}`, {
-      method: 'DELETE'
-    });
-    if (!res.ok) throw new Error('Failed to delete record');
-    loadDashboard();
-  } catch (err) {
-    alert(err.message);
   }
 }
 

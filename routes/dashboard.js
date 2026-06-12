@@ -382,27 +382,20 @@ router.get('/summary/:period', async (req, res) => {
       }));
     }
 
-    // ── 4. Fetch Personal Expenses (Local database only) ──
-    const expenses = await db.getExpensesByDateRange(startDate, endDate);
-
     // ── 5. Calculate Metrics ──
     const revenue = productsList.reduce((sum, p) => sum + (p.quantity * p.price), 0);
-    const totalExpenses = expenses.reduce((sum, e) => sum + parseFloat(e.amount), 0);
     const metaCost = metaAdsList.reduce((sum, s) => sum + parseFloat(s.amount_spent), 0);
-    const profit = revenue - totalExpenses - metaCost;
+    const profit = revenue - metaCost;
 
     res.json({
       period: req.params.period,
       revenue: parseFloat(revenue.toFixed(2)),
-      totalExpenses: parseFloat(totalExpenses.toFixed(2)),
       metaCost: parseFloat(metaCost.toFixed(2)),
       profit: parseFloat(profit.toFixed(2)),
       profitMargin: revenue > 0 ? parseFloat(((profit / revenue) * 100).toFixed(2)) : 0,
       productCount: productsList.length,
-      expenseCount: expenses.length,
       metaCampaigns: metaAdsList.length,
       products: productsList,
-      expenses,
       metaSpending: metaAdsList,
     });
   } catch (err) {
