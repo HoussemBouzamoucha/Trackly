@@ -425,26 +425,67 @@ router.get('/summary/:period', async (req, res) => {
 
     // Fallback to local DB products if Converty was not fetched/connected
     if (!fetchedFromConverty || productsList.length === 0) {
-      const localProducts = await db.getProductsByDateRange(startDate, endDate);
-      for (const p of localProducts) {
-        const orderTotal = p.quantity * p.price;
-        deliveredRevenue += orderTotal;
-        shippingCost += 7.00;
-        productCost += (p.price * 0.3) * p.quantity;
-        
-        confirmedOrdersCount += 1;
-        deliveredOrdersCount += 1;
-        totalOrdersCount += 1;
-
-        productsList.push({
-          id: p.id,
-          product_name: p.product_name,
-          quantity: p.quantity,
-          price: parseFloat(p.price),
-          status: 'delivered',
-          delivery_company: p.delivery_company || '—',
-          sale_date: p.sale_date
+      // Try fetching from orders table first (user-added orders)
+      try {
+        const localOrders = await db.getAllOrders();
+        const periodOrders = localOrders.filter(o => {
+          const orderDate = new Date(o.order_date || o.created_at);
+          return orderDate >= startDate && orderDate <= endDate;
         });
+
+        for (const order of periodOrders) {
+          totalOrdersCount++;
+          
+          const revenue = parseFloat(order.revenue || 0);
+          const productCost_val = parseFloat(order.product_cost || 0);
+          const shippingCost_val = parseFloat(order.shipping_cost || 0);
+
+          if (order.confirmed) confirmedOrdersCount++;
+          if (order.delivered) {
+            deliveredOrdersCount++;
+            deliveredRevenue += revenue;
+            productCost += productCost_val;
+            shippingCost += shippingCost_val;
+          }
+          if (order.returned) returnedOrdersCount++;
+
+          productsList.push({
+            id: order.id,
+            product_name: order.order_number,
+            quantity: 1,
+            price: revenue,
+            status: order.delivered ? 'delivered' : (order.confirmed ? 'confirmed' : 'pending'),
+            delivery_company: '—',
+            sale_date: order.order_date || order.created_at
+          });
+        }
+      } catch (err) {
+        console.log('Local orders fetch skipped:', err.message);
+      }
+
+      // Also try dashboard_products table
+      if (productsList.length === 0) {
+        const localProducts = await db.getProductsByDateRange(startDate, endDate);
+        for (const p of localProducts) {
+          const orderTotal = p.quantity * p.price;
+          deliveredRevenue += orderTotal;
+          shippingCost += 7.00;
+          productCost += (p.price * 0.3) * p.quantity;
+          
+          confirmedOrdersCount += 1;
+          deliveredOrdersCount += 1;
+          totalOrdersCount += 1;
+
+          productsList.push({
+            id: p.id,
+            product_name: p.product_name,
+            quantity: p.quantity,
+            price: parseFloat(p.price),
+            status: 'delivered',
+            delivery_company: p.delivery_company || '—',
+            sale_date: p.sale_date
+          });
+        }
       }
     }
 
