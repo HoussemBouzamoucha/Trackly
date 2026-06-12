@@ -376,52 +376,9 @@
       </div>
     </div>
 
-    <!-- ADD ORDER SECTION -->
-    <div class="orders-section">
-      <h3>➕ Add Order</h3>
-      <div id="order-success" class="success-message">Order added successfully!</div>
-      
-      <div class="form-grid">
-        <div class="form-group">
-          <label>Order Number *</label>
-          <input type="text" id="order-number" placeholder="e.g., ORD-001">
-        </div>
-        <div class="form-group">
-          <label>Revenue *</label>
-          <input type="number" id="order-revenue" placeholder="0.00" step="0.01" min="0">
-        </div>
-        <div class="form-group">
-          <label>Product Cost</label>
-          <input type="number" id="order-product-cost" placeholder="0.00" step="0.01" min="0">
-        </div>
-        <div class="form-group">
-          <label>Shipping Cost</label>
-          <input type="number" id="order-shipping-cost" placeholder="0.00" step="0.01" min="0">
-        </div>
-        <div class="form-group">
-          <label style="margin-top: 24px;">
-            <input type="checkbox" id="order-confirmed"> Confirmed
-          </label>
-        </div>
-        <div class="form-group">
-          <label style="margin-top: 24px;">
-            <input type="checkbox" id="order-delivered"> Delivered
-          </label>
-        </div>
-        <div class="form-group">
-          <label style="margin-top: 24px;">
-            <input type="checkbox" id="order-returned"> Returned
-          </label>
-        </div>
-      </div>
-      <button class="btn-submit" onclick="addOrder()">Add Order</button>
-    </div>
 
-    <!-- ORDERS TABLE -->
-    <div class="orders-section">
-      <h3>📋 Orders</h3>
-      <div id="orders-list"></div>
-    </div>
+
+
   </div>
 
   <script>
@@ -440,58 +397,12 @@
         btn.classList.add('active');
         currentPeriod = btn.dataset.period;
         loadKPIs();
-        loadOrders();
       });
     });
 
     // Add order
     async function addOrder() {
-      const orderNumber = document.getElementById('order-number').value;
-      const revenue = document.getElementById('order-revenue').value;
-      const productCost = document.getElementById('order-product-cost').value || 0;
-      const shippingCost = document.getElementById('order-shipping-cost').value || 0;
-      const confirmed = document.getElementById('order-confirmed').checked;
-      const delivered = document.getElementById('order-delivered').checked;
-      const returned = document.getElementById('order-returned').checked;
-
-      if (!orderNumber || !revenue) {
-        alert('Please fill in required fields');
-        return;
-      }
-
-      try {
-        const res = await fetch('/api/dashboard/orders', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            order_number: orderNumber,
-            revenue: parseFloat(revenue),
-            product_cost: parseFloat(productCost),
-            shipping_cost: parseFloat(shippingCost),
-            confirmed, delivered, returned
-          })
-        });
-
-        if (res.ok) {
-          document.getElementById('order-number').value = '';
-          document.getElementById('order-revenue').value = '';
-          document.getElementById('order-product-cost').value = '';
-          document.getElementById('order-shipping-cost').value = '';
-          document.getElementById('order-confirmed').checked = false;
-          document.getElementById('order-delivered').checked = false;
-          document.getElementById('order-returned').checked = false;
-          
-          const msg = document.getElementById('order-success');
-          msg.classList.add('show');
-          setTimeout(() => msg.classList.remove('show'), 3000);
-          
-          loadOrders();
-          loadKPIs();
-        }
-      } catch (err) {
-        console.error(err);
-        alert('Error adding order');
-      }
+      // Removed - read-only dashboard
     }
 
     // Load KPIs
@@ -533,68 +444,17 @@
 
     // Load orders
     async function loadOrders() {
-      try {
-        const res = await fetch('/api/dashboard/orders');
-        const orders = await res.json();
-
-        const list = document.getElementById('orders-list');
-        if (!orders || orders.length === 0) {
-          list.innerHTML = '<div class="empty-state"><p>No orders yet</p></div>';
-          return;
-        }
-
-        let html = `<table class="orders-table"><thead><tr>
-          <th>Order #</th>
-          <th>Revenue</th>
-          <th>Costs</th>
-          <th>Status</th>
-          <th>Date</th>
-          <th>Action</th>
-        </tr></thead><tbody>`;
-
-        orders.forEach(o => {
-          const totalCost = (o.product_cost || 0) + (o.shipping_cost || 0);
-          const date = new Date(o.order_date).toLocaleDateString();
-          const statuses = [];
-          if (o.confirmed) statuses.push('<span class="status-badge status-confirmed">Confirmed</span>');
-          if (o.delivered) statuses.push('<span class="status-badge status-delivered">Delivered</span>');
-          if (o.returned) statuses.push('<span class="status-badge status-returned">Returned</span>');
-          if (statuses.length === 0) statuses.push('<span class="status-badge status-pending">Pending</span>');
-
-          html += `<tr>
-            <td><strong>${o.order_number}</strong></td>
-            <td>$${parseFloat(o.revenue).toFixed(2)}</td>
-            <td>$${totalCost.toFixed(2)}</td>
-            <td>${statuses.join(' ')}</td>
-            <td>${date}</td>
-            <td><button class="delete-btn" onclick="deleteOrder(${o.id})">Delete</button></td>
-          </tr>`;
-        });
-
-        html += `</tbody></table>`;
-        list.innerHTML = html;
-      } catch (err) {
-        console.error(err);
-      }
+      // Removed - read-only dashboard, orders displayed in summary
     }
 
     // Delete order
     async function deleteOrder(id) {
-      if (confirm('Delete this order?')) {
-        try {
-          await fetch(`/api/dashboard/orders/${id}`, { method: 'DELETE' });
-          loadOrders();
-          loadKPIs();
-        } catch (err) {
-          console.error(err);
-        }
-      }
+      // Removed - read-only dashboard
     }
 
     // Load on page load
     window.addEventListener('load', () => {
       loadKPIs();
-      loadOrders();
     });
   </script>
 </body>
