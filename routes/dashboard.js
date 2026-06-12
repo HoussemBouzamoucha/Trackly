@@ -233,6 +233,15 @@ router.get('/summary/:period', async (req, res) => {
     let productsList = [];
     let metaAdsList = [];
 
+    let totalOrdersCount = 0;
+    let confirmedOrdersCount = 0;
+    let deliveredOrdersCount = 0;
+    let returnedOrdersCount = 0;
+
+    let deliveredRevenue = 0;
+    let productCost = 0;
+    let shippingCost = 0;
+
     // ── 1. Fetch Converty Products Sold (Orders) ──
     const storeId = req.session?.activeStoreId;
     let fetchedFromConverty = false;
@@ -240,7 +249,7 @@ router.get('/summary/:period', async (req, res) => {
     if (storeId) {
       try {
         const token = await getValidToken(req);
-        // Fetch a chunk of orders
+        // Fetch orders
         const response = await axios.get('https://api.converty.shop/api/v1/orders', {
           headers: { Authorization: `Bearer ${token}` },
           params: { limit: 100 }
@@ -253,6 +262,8 @@ router.get('/summary/:period', async (req, res) => {
           const orderDate = new Date(o.createdAt);
           return orderDate >= startDate && orderDate <= endDate;
         });
+
+        totalOrdersCount = periodOrders.length;
 
         // ── 2. Cross-reference with Delivery Companies ──
         // Fetch First Delivery commands in this range
@@ -276,16 +287,44 @@ router.get('/summary/:period', async (req, res) => {
           console.log('Tictac database query skipped or failed:', err.message);
         }
 
-        // Map order items to products list
+        // Map order items to products list and calculate order aggregates
         for (const o of periodOrders) {
-          const cart = Array.isArray(o.cart) ? o.cart : [];
+          const orderStatus = (o.status || '').toLowerCase();
           
+          // COD status classifications
+          const isConfirmed = !['pending', 'unconfirmed', 'cancelled', 'new', 'draft'].includes(orderStatus);
+          const isDelivered = ['delivered', 'completed', 'success', 'livré'].includes(orderStatus);
+          const isReturned = ['returned', 'refused', 'failed-delivery', 'retour', 'retourné'].includes(orderStatus);
+
+          if (isConfirmed) confirmedOrdersCount++;
+          if (isDelivered) {
+            deliveredOrdersCount++;
+            
+            // Sum delivered revenue
+            const orderTotal = parseFloat(o.total?.totalPrice || o.total?.basePrice || 0);
+            deliveredRevenue += orderTotal;
+
+            // Sum shipping fees paid
+            const orderShipping = parseFloat(o.total?.deliveryCost || o.total?.deliveryPrice || 7.00);
+            shippingCost += orderShipping;
+
+            // Sum product costs
+            const cart = Array.isArray(o.cart) ? o.cart : [];
+            for (const item of cart) {
+              const unitPrice = parseFloat(item.pricePerUnit ?? item.product?.price ?? 0);
+              const cost = parseFloat(item.product?.cost || item.cost || (unitPrice * 0.3) || 0);
+              const qty = item.quantity || 1;
+              productCost += cost * qty;
+            }
+          }
+          if (isReturned) returnedOrdersCount++;
+
           // Determine delivery company
           let deliveryCompany = 'Converty (Standard)';
           const customerPhone = o.customer?.phone;
           const customerName = o.customer?.name;
 
-          // Try matching First Delivery by customer details
+          // Try matching First Delivery
           const matchedFd = firstDeliveryOrders.find(fd => {
             const fdPhone = fd.Client?.telephone || fd.client?.telephone || '';
             const fdName = fd.Client?.name || fd.client?.nom || '';
@@ -293,7 +332,7 @@ router.get('/summary/:period', async (req, res) => {
                    (customerName && fdName && customerName.toLowerCase() === fdName.toLowerCase());
           });
 
-          // Try matching Tictac by customer details
+          // Try matching Tictac
           const matchedTt = tictacColis.find(tt => {
             return (customerPhone && tt.tel_cl && customerPhone.includes(tt.tel_cl)) || 
                    (customerName && tt.nom_prenom_cl && customerName.toLowerCase() === tt.nom_prenom_cl.toLowerCase());
@@ -305,12 +344,14 @@ router.get('/summary/:period', async (req, res) => {
             deliveryCompany = 'Tictac';
           }
 
+          const cart = Array.isArray(o.cart) ? o.cart : [];
           for (const item of cart) {
             productsList.push({
               id: o.id || o.reference,
               product_name: item.product?.name || 'Unknown Product',
               quantity: item.quantity || 1,
               price: parseFloat(item.pricePerUnit ?? item.product?.price ?? 0),
+              status: o.status || '—',
               delivery_company: deliveryCompany,
               sale_date: o.createdAt
             });
@@ -325,21 +366,32 @@ router.get('/summary/:period', async (req, res) => {
     // Fallback to local DB products if Converty was not fetched/connected
     if (!fetchedFromConverty || productsList.length === 0) {
       const localProducts = await db.getProductsByDateRange(startDate, endDate);
-      productsList = localProducts.map(p => ({
-        id: p.id,
-        product_name: p.product_name,
-        quantity: p.quantity,
-        price: parseFloat(p.price),
-        delivery_company: p.delivery_company || '—',
-        sale_date: p.sale_date
-      }));
+      for (const p of localProducts) {
+        const orderTotal = p.quantity * p.price;
+        deliveredRevenue += orderTotal;
+        shippingCost += 7.00;
+        productCost += (p.price * 0.3) * p.quantity;
+        
+        confirmedOrdersCount += 1;
+        deliveredOrdersCount += 1;
+        totalOrdersCount += 1;
+
+        productsList.push({
+          id: p.id,
+          product_name: p.product_name,
+          quantity: p.quantity,
+          price: parseFloat(p.price),
+          status: 'delivered',
+          delivery_company: p.delivery_company || '—',
+          sale_date: p.sale_date
+        });
+      }
     }
 
     // ── 3. Fetch Meta Ads Spend ──
     let fetchedFromMeta = false;
     const timeRange = JSON.stringify({ since: startDateStr, until: endDateStr });
     
-    // We only query Meta API if token is configured
     const isMetaTokenSet = process.env.META_ACCESS_TOKEN && process.env.META_ACCESS_TOKEN !== 'your_meta_access_token_here';
     if (isMetaTokenSet) {
       try {
@@ -368,7 +420,6 @@ router.get('/summary/:period', async (req, res) => {
       }
     }
 
-    // Fallback to local DB Meta Ads spending
     if (!fetchedFromMeta || metaAdsList.length === 0) {
       const localAds = await db.getMetaSpendingByDateRange(startDate, endDate);
       metaAdsList = localAds.map(ad => ({
@@ -382,19 +433,39 @@ router.get('/summary/:period', async (req, res) => {
       }));
     }
 
-    // ── 5. Calculate Metrics ──
-    const revenue = productsList.reduce((sum, p) => sum + (p.quantity * p.price), 0);
-    const metaCost = metaAdsList.reduce((sum, s) => sum + parseFloat(s.amount_spent), 0);
-    const profit = revenue - metaCost;
+    // ── 4. Calculate Final KPIs ──
+    const totalAdsSpend = metaAdsList.reduce((sum, s) => sum + parseFloat(s.amount_spent), 0);
+    
+    const costPerOrder = totalOrdersCount > 0 ? (totalAdsSpend / totalOrdersCount) : 0;
+    const confirmationRate = totalOrdersCount > 0 ? (confirmedOrdersCount / totalOrdersCount) * 100 : 0;
+    const deliveryRate = confirmedOrdersCount > 0 ? (deliveredOrdersCount / confirmedOrdersCount) * 100 : 0;
+    const returnRate = confirmedOrdersCount > 0 ? (returnedOrdersCount / confirmedOrdersCount) * 100 : 0;
+    
+    const deliveredRoas = totalAdsSpend > 0 ? (deliveredRevenue / totalAdsSpend) : 0;
+    const netProfit = deliveredRevenue - productCost - shippingCost - totalAdsSpend;
+    const profitRoas = totalAdsSpend > 0 ? (netProfit / totalAdsSpend) : 0;
 
     res.json({
       period: req.params.period,
-      revenue: parseFloat(revenue.toFixed(2)),
-      metaCost: parseFloat(metaCost.toFixed(2)),
-      profit: parseFloat(profit.toFixed(2)),
-      profitMargin: revenue > 0 ? parseFloat(((profit / revenue) * 100).toFixed(2)) : 0,
-      productCount: productsList.length,
-      metaCampaigns: metaAdsList.length,
+      totalAdsSpend: parseFloat(totalAdsSpend.toFixed(2)),
+      totalOrdersCount,
+      confirmedOrdersCount,
+      deliveredOrdersCount,
+      returnedOrdersCount,
+      
+      costPerOrder: parseFloat(costPerOrder.toFixed(2)),
+      confirmationRate: parseFloat(confirmationRate.toFixed(2)),
+      deliveryRate: parseFloat(deliveryRate.toFixed(2)),
+      returnRate: parseFloat(returnRate.toFixed(2)),
+      
+      deliveredRevenue: parseFloat(deliveredRevenue.toFixed(2)),
+      productCost: parseFloat(productCost.toFixed(2)),
+      shippingCost: parseFloat(shippingCost.toFixed(2)),
+      
+      deliveredRoas: parseFloat(deliveredRoas.toFixed(2)),
+      netProfit: parseFloat(netProfit.toFixed(2)),
+      profitRoas: parseFloat(profitRoas.toFixed(2)),
+      
       products: productsList,
       metaSpending: metaAdsList,
     });
