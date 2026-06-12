@@ -9,6 +9,7 @@ const apiRoutes           = require('./routes/api');
 const metaAdsRoutes       = require('./routes/metaAds');
 const firstDeliveryRoutes = require('./routes/firstDelivery');
 const tictacRoutes        = require('./routes/tictac');
+const dashboardRoutes     = require('./routes/dashboard');
 
 const app = express();
 
@@ -38,6 +39,7 @@ app.use('/api/converty',       apiRoutes);
 app.use('/api/meta',           metaAdsRoutes);
 app.use('/api/firstdelivery',  firstDeliveryRoutes);
 app.use('/api/tictac',         tictacRoutes);
+app.use('/api/dashboard',      dashboardRoutes);
 
 // ── Health check ────────────────────────────
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
