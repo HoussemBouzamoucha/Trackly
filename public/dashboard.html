@@ -284,11 +284,14 @@
       <h1>📊 Trackly KPI Dashboard</h1>
       <p style="color: #888; margin-bottom: 20px;">E-commerce performance metrics for Tunisian businesses</p>
 
-      <div class="period-selector">
-        <button class="period-btn active" data-period="daily">Daily</button>
-        <button class="period-btn" data-period="weekly">Weekly</button>
-        <button class="period-btn" data-period="monthly">Monthly</button>
-        <button class="period-btn" data-period="yearly">Yearly</button>
+      <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
+        <div class="period-selector">
+          <button class="period-btn active" data-period="daily">Daily</button>
+          <button class="period-btn" data-period="weekly">Weekly</button>
+          <button class="period-btn" data-period="monthly">Monthly</button>
+          <button class="period-btn" data-period="yearly">Yearly</button>
+        </div>
+        <button style="background: #667eea; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600;" onclick="refreshDashboard()">🔄 Refresh</button>
       </div>
     </header>
 
@@ -423,6 +426,12 @@
 
   <script>
     let currentPeriod = 'daily';
+
+    // Refresh dashboard
+    function refreshDashboard() {
+      loadKPIs();
+      loadOrders();
+    }
 
     // Period selector
     document.querySelectorAll('.period-btn').forEach(btn => {
