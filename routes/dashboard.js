@@ -221,6 +221,66 @@ router.delete('/meta-ads/:id', async (req, res) => {
   }
 });
 
+// ── Orders ───────────────────────────────────────────────────────
+
+// Add an order
+router.post('/orders', async (req, res) => {
+  try {
+    const { order_number, revenue, product_cost, shipping_cost, confirmed, delivered, returned } = req.body;
+    
+    if (!order_number || !revenue) {
+      return res.status(400).json({ error: 'order_number and revenue are required' });
+    }
+
+    const order = await db.addOrder(
+      order_number,
+      revenue,
+      product_cost || 0,
+      shipping_cost || 0,
+      confirmed || false,
+      delivered || false,
+      returned || false
+    );
+    res.json(order);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Get all orders
+router.get('/orders', async (req, res) => {
+  try {
+    const orders = await db.getAllOrders();
+    res.json(orders);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Update order status
+router.patch('/orders/:id', async (req, res) => {
+  try {
+    const order = await db.updateOrder(req.params.id, req.body);
+    res.json(order);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Delete order
+router.delete('/orders/:id', async (req, res) => {
+  try {
+    await db.deleteOrder(req.params.id);
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── Dashboard Summary ────────────────────────────────────────────
 
 // Get complete dashboard data

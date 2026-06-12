@@ -15,6 +15,7 @@ const mem = new Map();
 const dashboardProductsMem = [];
 const personalExpensesMem = [];
 const metaAdsSpendingMem = [];
+const ordersMem = [];
 
 if (!pool) {
   console.warn('⚠️  DATABASE_URL not set or placeholder value used — using in-memory store (data lost on restart). Add a PostgreSQL service on Railway for persistence.');
@@ -147,6 +148,23 @@ async function initDashboardTables() {
       conversions   INTEGER,
       date          TIMESTAMPTZ DEFAULT NOW(),
       created_at    TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+
+  // Orders table for KPI tracking
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS orders (
+      id                SERIAL PRIMARY KEY,
+      order_number      TEXT UNIQUE,
+      status            TEXT DEFAULT 'pending',
+      revenue           DECIMAL(10, 2) NOT NULL,
+      product_cost      DECIMAL(10, 2) DEFAULT 0,
+      shipping_cost     DECIMAL(10, 2) DEFAULT 0,
+      confirmed         BOOLEAN DEFAULT FALSE,
+      delivered         BOOLEAN DEFAULT FALSE,
+      returned          BOOLEAN DEFAULT FALSE,
+      order_date        TIMESTAMPTZ DEFAULT NOW(),
+      created_at        TIMESTAMPTZ DEFAULT NOW()
     )
   `);
 }
@@ -379,6 +397,84 @@ async function getMetaSpendingByDateRange(startDate, endDate) {
   return rows;
 }
 
+// ── Orders CRUD ──────────────────────────────────────────────────
+async function addOrder(order_number, revenue, product_cost = 0, shipping_cost = 0, confirmed = false, delivered = false, returned = false) {
+  if (!pool) {
+    const item = {
+      id: ordersMem.length + 1,
+      order_number,
+      status: confirmed ? 'confirmed' : 'pending',
+      revenue: parseFloat(revenue),
+      product_cost: parseFloat(product_cost),
+      shipping_cost: parseFloat(shipping_cost),
+      confirmed: Boolean(confirmed),
+      delivered: Boolean(delivered),
+      returned: Boolean(returned),
+      order_date: new Date(),
+      created_at: new Date()
+    };
+    ordersMem.push(item);
+    return item;
+  }
+  const { rows } = await pool.query(
+    `INSERT INTO orders (order_number, status, revenue, product_cost, shipping_cost, confirmed, delivered, returned)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
+    [order_number, confirmed ? 'confirmed' : 'pending', revenue, product_cost, shipping_cost, confirmed, delivered, returned]
+  );
+  return rows[0];
+}
+
+async function getAllOrders() {
+  if (!pool) {
+    return [...ordersMem].sort((a, b) => b.order_date - a.order_date);
+  }
+  const { rows } = await pool.query('SELECT * FROM orders ORDER BY order_date DESC');
+  return rows;
+}
+
+async function updateOrder(id, updates) {
+  if (!pool) {
+    const idx = ordersMem.findIndex(o => String(o.id) === String(id));
+    if (idx !== -1) {
+      ordersMem[idx] = { ...ordersMem[idx], ...updates };
+      return ordersMem[idx];
+    }
+    return null;
+  }
+  const setClause = Object.keys(updates).map((key, i) => `${key} = $${i + 1}`).join(', ');
+  const values = Object.values(updates);
+  values.push(id);
+  const { rows } = await pool.query(
+    `UPDATE orders SET ${setClause} WHERE id = $${values.length} RETURNING *`,
+    values
+  );
+  return rows[0];
+}
+
+async function deleteOrder(id) {
+  if (!pool) {
+    const idx = ordersMem.findIndex(o => String(o.id) === String(id));
+    if (idx !== -1) ordersMem.splice(idx, 1);
+    return;
+  }
+  await pool.query('DELETE FROM orders WHERE id = $1', [id]);
+}
+
+async function getOrdersByDateRange(startDate, endDate) {
+  if (!pool) {
+    const s = new Date(startDate);
+    const e = new Date(endDate);
+    return ordersMem
+      .filter(o => o.order_date >= s && o.order_date <= e)
+      .sort((a, b) => b.order_date - a.order_date);
+  }
+  const { rows } = await pool.query(
+    'SELECT * FROM orders WHERE order_date >= $1 AND order_date <= $2 ORDER BY order_date DESC',
+    [startDate, endDate]
+  );
+  return rows;
+}
+
 module.exports = {
   initDb, getAllStores, getStore, upsertStore, deleteStore, deleteAllStores,
   initTictacTable, upsertColis, getColisById, getAllColis, deleteColis,
@@ -388,4 +484,6 @@ module.exports = {
   addExpense, getAllExpenses, deleteExpense, getExpensesByDateRange,
   // Meta ads spending
   addMetaSpending, getAllMetaSpending, deleteMetaSpending, getMetaSpendingByDateRange,
+  // Orders
+  addOrder, getAllOrders, updateOrder, deleteOrder, getOrdersByDateRange,
 };
