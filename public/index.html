@@ -406,90 +406,112 @@
        TAB: DASHBOARD
   ════════════════════════════════════════ -->
   <div class="tab-panel active" id="tab-dashboard">
-    <!-- Header -->
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
-      <h2 style="font-size: 20px; font-weight: 700;">Financial Dashboard</h2>
-    </div>
 
-    <!-- KPI Cards Grid -->
-    <div class="db-kpi-grid">
-      <!-- Daily -->
-      <div class="db-kpi-card active" id="kpi-card-daily" onclick="selectDbPeriod('daily')">
-        <div class="db-kpi-title">📅 Daily (Today)</div>
-        <div class="db-kpi-val" id="kpi-profit-daily">Loading…</div>
-        <div class="db-kpi-breakdown">
-          <div>Sales: <span id="kpi-rev-daily" style="font-weight: 600;">—</span></div>
-          <div>Ad Cost: <span id="kpi-ads-daily" style="color: #c62828;">—</span></div>
-          <div id="kpi-margin-daily" class="db-kpi-margin">—</div>
-        </div>
+    <!-- Header row -->
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
+      <div>
+        <h2 style="font-size:20px; font-weight:700;">Dashboard</h2>
+        <div style="font-size:13px; color:#888; margin-top:3px;" id="db-active-range-label">—</div>
       </div>
-      <!-- Weekly -->
-      <div class="db-kpi-card" id="kpi-card-weekly" onclick="selectDbPeriod('weekly')">
-        <div class="db-kpi-title">📆 Weekly (Last 7 Days)</div>
-        <div class="db-kpi-val" id="kpi-profit-weekly">Loading…</div>
-        <div class="db-kpi-breakdown">
-          <div>Sales: <span id="kpi-rev-weekly" style="font-weight: 600;">—</span></div>
-          <div>Ad Cost: <span id="kpi-ads-weekly" style="color: #c62828;">—</span></div>
-          <div id="kpi-margin-weekly" class="db-kpi-margin">—</div>
+      <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+        <div style="display:flex; gap:6px;">
+          <button class="pill active" id="db-pill-daily"   onclick="selectDbPeriod('daily')">Today</button>
+          <button class="pill"        id="db-pill-weekly"  onclick="selectDbPeriod('weekly')">7 Days</button>
+          <button class="pill"        id="db-pill-monthly" onclick="selectDbPeriod('monthly')">30 Days</button>
+          <button class="pill"        id="db-pill-yearly"  onclick="selectDbPeriod('yearly')">365 Days</button>
         </div>
-      </div>
-      <!-- Monthly -->
-      <div class="db-kpi-card" id="kpi-card-monthly" onclick="selectDbPeriod('monthly')">
-        <div class="db-kpi-title">📅 Monthly (Last 30 Days)</div>
-        <div class="db-kpi-val" id="kpi-profit-monthly">Loading…</div>
-        <div class="db-kpi-breakdown">
-          <div>Sales: <span id="kpi-rev-monthly" style="font-weight: 600;">—</span></div>
-          <div>Ad Cost: <span id="kpi-ads-monthly" style="color: #c62828;">—</span></div>
-          <div id="kpi-margin-monthly" class="db-kpi-margin">—</div>
-        </div>
-      </div>
-      <!-- Yearly -->
-      <div class="db-kpi-card" id="kpi-card-yearly" onclick="selectDbPeriod('yearly')">
-        <div class="db-kpi-title">🗓️ Yearly (Last 365 Days)</div>
-        <div class="db-kpi-val" id="kpi-profit-yearly">Loading…</div>
-        <div class="db-kpi-breakdown">
-          <div>Sales: <span id="kpi-rev-yearly" style="font-weight: 600;">—</span></div>
-          <div>Ad Cost: <span id="kpi-ads-yearly" style="color: #c62828;">—</span></div>
-          <div id="kpi-margin-yearly" class="db-kpi-margin">—</div>
-        </div>
+        <button class="btn-fetch" onclick="loadDashboard()"><span>⟳</span> Refresh</button>
       </div>
     </div>
 
-    <!-- Detailed Records Section -->
+    <!-- Primary KPI cards -->
+    <div class="db-kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); margin-bottom:16px;">
+
+      <div class="db-kpi-card">
+        <div class="db-kpi-title">📦 Total Orders</div>
+        <div class="db-kpi-val" id="kpi-total-orders">—</div>
+        <div class="db-kpi-breakdown">
+          <div>Confirmed: <strong id="kpi-confirmed">—</strong></div>
+          <div>Delivered: <strong id="kpi-delivered">—</strong></div>
+          <div>Returned: <strong id="kpi-returned">—</strong></div>
+        </div>
+      </div>
+
+      <div class="db-kpi-card">
+        <div class="db-kpi-title">💰 Delivered Revenue</div>
+        <div class="db-kpi-val" id="kpi-revenue">—</div>
+        <div class="db-kpi-breakdown">
+          <div>Product cost: <span id="kpi-product-cost" style="color:#c62828">—</span></div>
+          <div>Shipping: <span id="kpi-shipping-cost" style="color:#c62828">—</span></div>
+        </div>
+      </div>
+
+      <div class="db-kpi-card">
+        <div class="db-kpi-title">📊 Ad Spend</div>
+        <div class="db-kpi-val negative" id="kpi-ad-spend">—</div>
+        <div class="db-kpi-breakdown">
+          <div>Cost / Order: <span id="kpi-cost-per-order">—</span></div>
+          <div>Delivered ROAS: <span id="kpi-del-roas" style="color:#534AB7">—</span></div>
+        </div>
+      </div>
+
+      <div class="db-kpi-card">
+        <div class="db-kpi-title">🎯 Net Profit</div>
+        <div class="db-kpi-val" id="kpi-net-profit">—</div>
+        <div class="db-kpi-breakdown">
+          <div>Profit ROAS: <span id="kpi-prof-roas" style="color:#534AB7">—</span></div>
+          <div id="kpi-margin-pill" class="db-kpi-margin" style="margin-top:6px">—</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Secondary rate metrics -->
+    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:10px; margin-bottom:20px;">
+      <div class="section" style="margin:0; padding:14px 16px; text-align:center;">
+        <div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;">Confirmation Rate</div>
+        <div style="font-size:20px;font-weight:700;" id="kpi-conf-rate">—</div>
+      </div>
+      <div class="section" style="margin:0; padding:14px 16px; text-align:center;">
+        <div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;">Delivery Rate</div>
+        <div style="font-size:20px;font-weight:700;color:#2e7d32;" id="kpi-del-rate">—</div>
+      </div>
+      <div class="section" style="margin:0; padding:14px 16px; text-align:center;">
+        <div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;">Return Rate</div>
+        <div style="font-size:20px;font-weight:700;color:#c62828;" id="kpi-ret-rate">—</div>
+      </div>
+      <div class="section" style="margin:0; padding:14px 16px; text-align:center;">
+        <div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;">Delivered ROAS</div>
+        <div style="font-size:20px;font-weight:700;color:#534AB7;" id="kpi-del-roas-2">—</div>
+      </div>
+      <div class="section" style="margin:0; padding:14px 16px; text-align:center;">
+        <div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;">Profit ROAS</div>
+        <div style="font-size:20px;font-weight:700;color:#534AB7;" id="kpi-prof-roas-2">—</div>
+      </div>
+    </div>
+
+    <!-- Detail breakdown section -->
     <div class="section">
-      <div class="section-header" style="border-bottom: none;">
+      <div class="section-header" style="border-bottom:none;">
         <div class="section-title">
-          <div class="section-icon">📈</div>
+          <div class="section-icon">📋</div>
           <div>
-            <h3>Period Details: <span id="db-active-period-label" style="text-transform: capitalize; color: #534AB7;">daily</span></h3>
-            <span class="endpoint-tag" id="db-active-range-label">Date Range</span>
+            <h3>Breakdown — <span id="db-active-period-label" style="color:#534AB7;text-transform:capitalize;">Today</span></h3>
           </div>
         </div>
-        <div class="section-controls">
-          <button class="btn-fetch" id="btn-db-refresh" onclick="loadDashboard()"><span>⟳</span> Refresh</button>
-        </div>
       </div>
-
-      <!-- Detail Sub-tabs -->
-      <div style="padding: 0 20px 10px; border-bottom: 1px solid #f0f0ea; display: flex; gap: 8px;">
-        <button class="pill active" id="db-subtab-btn-products" onclick="showDbSubtab('products')">📦 Products Sold (<span id="db-count-products">0</span>)</button>
-        <button class="pill" id="db-subtab-btn-ads" onclick="showDbSubtab('ads')">📊 Ads Spending (<span id="db-count-ads">0</span>)</button>
+      <div style="padding:0 20px 10px; border-bottom:1px solid #f0f0ea; display:flex; gap:8px;">
+        <button class="pill active" id="db-subtab-btn-products" onclick="showDbSubtab('products')">📦 Products (<span id="db-count-products">0</span>)</button>
+        <button class="pill"        id="db-subtab-btn-ads"      onclick="showDbSubtab('ads')">📊 Ads (<span id="db-count-ads">0</span>)</button>
       </div>
-
-      <!-- Products Sold Table -->
-      <div class="db-subtab-panel" id="db-subtab-products" style="display: block;">
-        <div class="section-body" id="db-body-products">
-          <div class="state-msg">No sales logged in this period.</div>
-        </div>
+      <div class="db-subtab-panel" id="db-subtab-products" style="display:block;">
+        <div class="section-body" id="db-body-products"><div class="state-msg">Loading…</div></div>
       </div>
-
-      <!-- Ads Spending Table -->
-      <div class="db-subtab-panel" id="db-subtab-ads" style="display: none;">
-        <div class="section-body" id="db-body-ads">
-          <div class="state-msg">No ads logged in this period.</div>
-        </div>
+      <div class="db-subtab-panel" id="db-subtab-ads" style="display:none;">
+        <div class="section-body" id="db-body-ads"><div class="state-msg">Loading…</div></div>
       </div>
     </div>
+
   </div><!-- /tab-dashboard -->
 
 
