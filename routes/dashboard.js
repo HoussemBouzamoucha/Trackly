@@ -303,7 +303,17 @@ router.get('/summary/:period', async (req, res) => {
     let shippingCost = 0;
 
     // ── 1. Fetch Converty Products Sold (Orders) ──
-    const storeId = req.session?.activeStoreId;
+    // Auto-restore activeStoreId from DB if session was wiped (server restart / race condition)
+    let storeId = req.session?.activeStoreId;
+    if (!storeId) {
+      try {
+        const stores = await db.getAllStores();
+        if (stores.length > 0) {
+          storeId = stores[0].id;
+          req.session.activeStoreId = storeId;
+        }
+      } catch (_) {}
+    }
     let fetchedFromConverty = false;
 
     if (storeId) {
