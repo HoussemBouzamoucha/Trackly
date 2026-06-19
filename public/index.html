@@ -794,34 +794,32 @@ function showTab(name) {
 // DASHBOARD CONTROLLERS
 // ══════════════════════════════════════════════════════════════════
 let currentDbPeriod = 'daily';
-let dashboardData = {};
 
 function selectDbPeriod(period) {
   currentDbPeriod = period;
-  document.querySelectorAll('.db-kpi-card').forEach(card => card.classList.remove('active'));
-  const activeCard = document.getElementById('kpi-card-' + period);
-  if (activeCard) activeCard.classList.add('active');
-  document.getElementById('db-active-period-label').textContent = period;
-  
-  // Update date range labels
-  const rangeLabel = document.getElementById('db-active-range-label');
+
+  // Update pills
+  ['daily','weekly','monthly','yearly'].forEach(p => {
+    document.getElementById('db-pill-' + p).classList.toggle('active', p === period);
+  });
+
+  const labels = { daily: 'Today', weekly: '7 Days', monthly: '30 Days', yearly: '365 Days' };
+  document.getElementById('db-active-period-label').textContent = labels[period] || period;
+
+  // Date range label
   const now = new Date();
   let start = new Date();
+  const rangeEl = document.getElementById('db-active-range-label');
   if (period === 'daily') {
-    rangeLabel.textContent = now.toLocaleDateString();
-  } else if (period === 'weekly') {
-    start.setDate(now.getDate() - 7);
-    rangeLabel.textContent = start.toLocaleDateString() + ' - ' + now.toLocaleDateString();
-  } else if (period === 'monthly') {
-    start.setMonth(now.getMonth() - 1);
-    rangeLabel.textContent = start.toLocaleDateString() + ' - ' + now.toLocaleDateString();
-  } else if (period === 'yearly') {
-    start.setFullYear(now.getFullYear() - 1);
-    rangeLabel.textContent = start.toLocaleDateString() + ' - ' + now.toLocaleDateString();
+    rangeEl.textContent = now.toLocaleDateString(undefined, { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+  } else {
+    if (period === 'weekly')  start.setDate(now.getDate() - 7);
+    if (period === 'monthly') start.setMonth(now.getMonth() - 1);
+    if (period === 'yearly')  start.setFullYear(now.getFullYear() - 1);
+    rangeEl.textContent = start.toLocaleDateString() + ' – ' + now.toLocaleDateString();
   }
-  
-  // Render tables
-  renderDbDetails();
+
+  loadDashboard();
 }
 
 function showDbSubtab(tabName) {
@@ -832,109 +830,97 @@ function showDbSubtab(tabName) {
 }
 
 async function loadDashboard() {
-  const periods = ['daily', 'weekly', 'monthly', 'yearly'];
   try {
-    for (const p of periods) {
-      const res = await fetch(`/api/dashboard/summary/${p}`);
-      const data = await res.json();
-      
-      // Update aggregate data map
-      dashboardData[p] = data;
+    const res  = await fetch(`/api/dashboard/summary/${currentDbPeriod}`);
+    const data = await res.json();
 
-      // Update KPI Card UI elements
-      const sign = data.profit >= 0 ? '+' : '';
-      const profitVal = document.getElementById('kpi-profit-' + p);
-      profitVal.textContent = sign + formatPrice(data.profit, 'TND');
-      profitVal.className = 'db-kpi-val ' + (data.profit >= 0 ? 'positive' : 'negative');
+    const fmt     = v => (isFinite(v) && v != null) ? v : 0;
+    const fmtCur  = v => formatPrice(fmt(v), 'TND');
+    const fmtPct  = v => `${fmt(v).toFixed(1)}%`;
+    const fmtRoas = v => `${fmt(v).toFixed(2)}x`;
 
-      document.getElementById('kpi-rev-' + p).textContent = formatPrice(data.revenue, 'TND');
-      document.getElementById('kpi-ads-' + p).textContent = formatPrice(data.metaCost, 'TND');
+    // Orders card
+    document.getElementById('kpi-total-orders').textContent = fmt(data.totalOrdersCount);
+    document.getElementById('kpi-confirmed').textContent    = fmt(data.confirmedOrdersCount);
+    document.getElementById('kpi-delivered').textContent    = fmt(data.deliveredOrdersCount);
+    document.getElementById('kpi-returned').textContent     = fmt(data.returnedOrdersCount);
 
-      const marginDiv = document.getElementById('kpi-margin-' + p);
-      marginDiv.textContent = `Margin: ${data.profitMargin}%`;
-      marginDiv.className = 'db-kpi-margin ' + (data.profitMargin >= 0 ? 'positive' : 'negative');
-    }
-    
-    // Refresh active period display
-    selectDbPeriod(currentDbPeriod);
+    // Revenue card
+    document.getElementById('kpi-revenue').textContent      = fmtCur(data.deliveredRevenue);
+    document.getElementById('kpi-product-cost').textContent = fmtCur(data.productCost);
+    document.getElementById('kpi-shipping-cost').textContent = fmtCur(data.shippingCost);
+
+    // Ad Spend card
+    document.getElementById('kpi-ad-spend').textContent      = fmtCur(data.totalAdsSpend);
+    document.getElementById('kpi-cost-per-order').textContent = fmtCur(data.costPerOrder);
+    document.getElementById('kpi-del-roas').textContent       = fmtRoas(data.deliveredRoas);
+
+    // Net Profit card
+    const profitEl = document.getElementById('kpi-net-profit');
+    profitEl.textContent = fmtCur(data.netProfit);
+    profitEl.className   = 'db-kpi-val ' + (fmt(data.netProfit) >= 0 ? 'positive' : 'negative');
+    document.getElementById('kpi-prof-roas').textContent = fmtRoas(data.profitRoas);
+    const margin = fmt(data.deliveredRevenue) > 0
+      ? (fmt(data.netProfit) / fmt(data.deliveredRevenue)) * 100 : 0;
+    const marginPill = document.getElementById('kpi-margin-pill');
+    marginPill.textContent = `Margin: ${margin.toFixed(1)}%`;
+    marginPill.className   = 'db-kpi-margin ' + (margin >= 0 ? 'positive' : 'negative');
+
+    // Secondary rate metrics
+    document.getElementById('kpi-conf-rate').textContent  = fmtPct(data.confirmationRate);
+    document.getElementById('kpi-del-rate').textContent   = fmtPct(data.deliveryRate);
+    document.getElementById('kpi-ret-rate').textContent   = fmtPct(data.returnRate);
+    document.getElementById('kpi-del-roas-2').textContent = fmtRoas(data.deliveredRoas);
+    document.getElementById('kpi-prof-roas-2').textContent = fmtRoas(data.profitRoas);
+
+    // Breakdown tables
+    renderDbDetails(data);
   } catch (err) {
     console.error('Error loading dashboard:', err);
   }
 }
 
-function renderDbDetails() {
-  const data = dashboardData[currentDbPeriod] || { products: [], metaSpending: [] };
-  
-  // Update badges
+function renderDbDetails(data) {
   document.getElementById('db-count-products').textContent = data.products?.length || 0;
-  document.getElementById('db-count-ads').textContent = data.metaSpending?.length || 0;
+  document.getElementById('db-count-ads').textContent      = data.metaSpending?.length || 0;
 
-  // Render Products Table
+  // Products table
   const prodBody = document.getElementById('db-body-products');
   if (data.products && data.products.length > 0) {
-    const rows = data.products.map(p => `
-      <tr>
-        <td><strong>${esc(p.product_name)}</strong></td>
-        <td>${p.quantity}</td>
-        <td>${formatPrice(p.price, 'TND')}</td>
-        <td>${formatPrice(p.quantity * p.price, 'TND')}</td>
-        <td><span class="cell-badge badge-blue">${esc(p.delivery_company || '—')}</span></td>
-        <td>${new Date(p.sale_date).toLocaleDateString()}</td>
-      </tr>
-    `).join('');
-    prodBody.innerHTML = `
-      <div class="data-table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Product Name</th>
-              <th>Qty</th>
-              <th>Unit Price</th>
-              <th>Total Price</th>
-              <th>Delivery Company</th>
-              <th>Sale Date</th>
-            </tr>
-          </thead>
-          <tbody>${rows}</tbody>
-        </table>
-      </div>
-    `;
+    const rows = data.products.map(p => `<tr>
+      <td><strong>${esc(p.product_name)}</strong></td>
+      <td>${p.quantity}</td>
+      <td>${formatPrice(p.price, 'TND')}</td>
+      <td>${formatPrice(p.quantity * p.price, 'TND')}</td>
+      <td><span class="cell-badge ${statusBadge(p.status)}">${esc(p.status || '—')}</span></td>
+      <td><span class="cell-badge badge-blue">${esc(p.delivery_company || '—')}</span></td>
+      <td style="white-space:nowrap">${p.sale_date ? new Date(p.sale_date).toLocaleDateString() : '—'}</td>
+    </tr>`).join('');
+    prodBody.innerHTML = `<div class="data-table-wrap"><table>
+      <thead><tr><th>Product</th><th>Qty</th><th>Unit Price</th><th>Total</th><th>Status</th><th>Delivery</th><th>Date</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>`;
   } else {
-    prodBody.innerHTML = '<div class="state-msg">No sales logged in this period.</div>';
+    prodBody.innerHTML = '<div class="state-msg">No sales in this period.</div>';
   }
 
-  // Render Ads Table
+  // Ads table
   const adsBody = document.getElementById('db-body-ads');
   if (data.metaSpending && data.metaSpending.length > 0) {
-    const rows = data.metaSpending.map(ad => `
-      <tr>
-        <td><strong>${esc(ad.campaign_name)}</strong></td>
-        <td style="color:#c62828">${formatPrice(ad.amount_spent, 'TND')}</td>
-        <td>${ad.impressions != null ? ad.impressions.toLocaleString() : '—'}</td>
-        <td>${ad.clicks != null ? ad.clicks.toLocaleString() : '—'}</td>
-        <td>${ad.conversions != null ? ad.conversions.toLocaleString() : '—'}</td>
-        <td>${new Date(ad.date).toLocaleDateString()}</td>
-      </tr>
-    `).join('');
-    adsBody.innerHTML = `
-      <div class="data-table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Campaign Name</th>
-              <th>Amount Spent</th>
-              <th>Impressions</th>
-              <th>Clicks</th>
-              <th>Conversions</th>
-              <th>Date</th>
-            </tr>
-          </thead>
-          <tbody>${rows}</tbody>
-        </table>
-      </div>
-    `;
+    const rows = data.metaSpending.map(ad => `<tr>
+      <td><strong>${esc(ad.campaign_name)}</strong></td>
+      <td style="color:#c62828">${formatPrice(ad.amount_spent, 'TND')}</td>
+      <td>${ad.impressions != null ? Number(ad.impressions).toLocaleString() : '—'}</td>
+      <td>${ad.clicks      != null ? Number(ad.clicks).toLocaleString()      : '—'}</td>
+      <td>${ad.conversions != null ? Number(ad.conversions).toLocaleString() : '—'}</td>
+      <td style="white-space:nowrap">${ad.date ? new Date(ad.date).toLocaleDateString() : '—'}</td>
+    </tr>`).join('');
+    adsBody.innerHTML = `<div class="data-table-wrap"><table>
+      <thead><tr><th>Campaign</th><th>Spent</th><th>Impressions</th><th>Clicks</th><th>Conversions</th><th>Date</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>`;
   } else {
-    adsBody.innerHTML = '<div class="state-msg">No ads logged in this period.</div>';
+    adsBody.innerHTML = '<div class="state-msg">No ad spend in this period.</div>';
   }
 }
 
