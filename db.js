@@ -216,10 +216,6 @@ async function getAllColis() {
   return rows;
 }
 
-async function deleteColis(code_barre) {
-  if (!pool) return;
-  await pool.query('DELETE FROM tictac_colis WHERE code_barre = $1', [code_barre]);
-}
 
 // ── Dashboard Products CRUD ──────────────────────────────────────
 async function addProduct(product_name, quantity, price, delivery_company, sale_date = new Date()) {
