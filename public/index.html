@@ -1642,9 +1642,8 @@ function statusBadge(status) {
 }
 
 // ── Kick off ──────────────────────────────────────────────────────
-init();
 metaInit();
-selectDbPeriod('daily');
+init().then(() => selectDbPeriod('daily'));
 </script>
 </body>
 </html>
