@@ -473,7 +473,7 @@ async function getOrdersByDateRange(startDate, endDate) {
 
 module.exports = {
   initDb, getAllStores, getStore, upsertStore, deleteStore, deleteAllStores,
-  initTictacTable, upsertColis, getColisById, getAllColis, deleteColis,
+  initTictacTable, upsertColis, getColisById, getAllColis,
   // Dashboard products
   addProduct, getAllProducts, deleteProduct, getProductsByDateRange,
   // Dashboard expenses
